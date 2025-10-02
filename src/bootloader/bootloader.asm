@@ -60,75 +60,82 @@ READDATA:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 SUCCESS:
-    mov ax, 0xB800
-    mov es, ax
-
-    xor di, di
-
-    .CLEARLOOP:
-        mov byte[ es: di ], 0
-        mov byte[ es: di + 1 ], 0x0A
-
-        add di, 2
-
-        cmp di, 80 * 25 * 2
-        jl .CLEARLOOP
-
-        mov si, MESSAGE1
-        xor di, di
-
-    .MESSAGELOOP:
-        mov al, byte[ si ]
-
-        cmp al, 0
-        je  .MESSAGELOOP_END
-
-        mov byte[ es: di ], al
-
-        inc si
-        add di, 2
-
-        jmp .MESSAGELOOP
-
-    .MESSAGELOOP_END:
-        jmp END
+    push MESSAGE1
+    call PRINT_MESSAGE
+    add sp, 2
+    jmp END
 
 HANDLE_DISK_ERROR:
-    mov ax, 0xB800
-    mov es, ax
-
-    xor di, di
-
-    .CLEARLOOP:
-        mov byte[ es: di ], 0
-        mov byte[ es: di + 1 ], 0x0A
-
-        add di, 2
-
-        cmp di, 80 * 25 * 2
-        jl .CLEARLOOP
-
-        mov si, MESSAGE2
-        xor di, di
-
-    .MESSAGELOOP:
-        mov al, byte[ si ]
-
-        cmp al, 0
-        je  .MESSAGELOOP_END
-
-        mov byte[ es: di ], al
-
-        inc si
-        add di, 2
-
-        jmp .MESSAGELOOP
-
-    .MESSAGELOOP_END:
-        jmp END
+    push MESSAGE2
+    call PRINT_MESSAGE
+    add sp, 2
+    jmp END
 
 END:
     jmp $
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; FUNCTIONS
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+PRINT_MESSAGE:
+    push bp
+    mov bp, sp
+    push ax
+    push bx
+    push dx
+    push es
+    push di
+    push si
+
+    mov ax, 0xB800
+    mov es, ax
+
+    xor di, di
+
+    .CLEARLOOP:
+        mov byte[ es: di ], 0
+        mov byte[ es: di + 1 ], 0x0A
+
+        add di, 2
+
+        cmp di, 80 * 25 * 2
+        jl .CLEARLOOP
+
+        mov si, word[bp + 4]
+        xor di, di
+
+    .MESSAGELOOP:
+        mov al, byte[ si ]
+
+        cmp al, 0
+        je  .MESSAGELOOP_END
+
+        mov byte[ es: di ], al
+
+        inc si
+        add di, 2
+
+        jmp .MESSAGELOOP
+
+    .MESSAGELOOP_END:
+        mov bx, di
+        shr bx, 1
+        mov ah, 2
+        mov bh, 0
+        mov dh, 0
+        mov dl, bl
+        int 0x10
+
+    pop si
+    pop di
+    pop es
+    pop dx
+    pop bx
+    pop ax
+    pop bp
+    ret
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Data
