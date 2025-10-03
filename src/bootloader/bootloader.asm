@@ -3,19 +3,49 @@
 
 SECTION .text
 
+cli
 xor ax, ax
 mov ds, ax
+mov ss, ax
+mov [BOOT_DRIVE], dl
+mov sp, 0x7C00
+sti
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Clear Display
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+mov ax, 0xB800
+mov es, ax
+
+xor di, di
+
+.CLEARLOOP:
+    mov byte[ es: di ], 0
+    mov byte[ es: di + 1 ], 0x0A
+
+    add di, 2
+
+    cmp di, 80 * 25 * 2
+    jl .CLEARLOOP
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Load OS into 0x10000
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-READDATA:
-    ; set destination
-    mov ax, 0x1000
-    mov es, ax
-    xor bx, bx
+RESETDISK:
+    mov dl, [BOOT_DRIVE]
+    xor ax, ax
+    int 0x13
+    jc HANDLE_DISK_ERROR
 
+READDATA:
+    ; print
+    push MESSAGE_READ_START
+    call PRINT_MESSAGE
+    add sp, 2
+
+    mov si, 0x1000
     mov di, word[ TOTAL_SECTOR_COUNT ]
 
     .READLOOP:
@@ -23,24 +53,27 @@ READDATA:
         je .READLOOP_END
         dec di
 
+        ; set destination
+        mov es, si
+        xor bx, bx
+
         ; call BIOS
         mov ah, 2
         mov al, 1
         mov ch, byte[ TRACK_IDX ]
         mov cl, byte[ SECTOR_IDX ]
         mov dh, byte[ HEAD_IDX ]
-        ; mov dl, dl ; use initialized value by BIOS
+        mov dl, byte[ BOOT_DRIVE ]
         int 0x13
         jc HANDLE_DISK_ERROR
 
         ; increase
-        add ax, 0x0020
-        mov es, ax
+        add si, 0x0020
+        mov es, si
 
+        inc byte[ SECTOR_IDX ]
         mov al, byte[ SECTOR_IDX ]
-        inc al
-        mov byte[ SECTOR_IDX ], al
-        cmp al, 19
+        cmp al, 37
         jl .READLOOP
 
         xor byte[ HEAD_IDX ], 1
@@ -48,31 +81,34 @@ READDATA:
         cmp byte[ HEAD_IDX ], 0
         jne .READLOOP
 
-        add byte[ TRACK_IDX ], 1
+        inc byte[ TRACK_IDX ]
         jmp .READLOOP
 
-
     .READLOOP_END:
-
+        jmp HANDLE_SUCCESS
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; HANDLER
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-SUCCESS:
-    push MESSAGE1
+HANDLE_SUCCESS:
+    push MESSAGE_READ_END
     call PRINT_MESSAGE
     add sp, 2
-    jmp END
+    jmp HANDLE_END
 
 HANDLE_DISK_ERROR:
-    push MESSAGE2
+    push MESSAGE_DISK_ERROR
     call PRINT_MESSAGE
     add sp, 2
-    jmp END
+    .INF_LOOP:
+        cli
+        hlt
+        jmp .INF_LOOP
 
-END:
-    jmp $
+HANDLE_END:
+    jmp 0x1000:0x0000
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; FUNCTIONS
@@ -92,18 +128,7 @@ PRINT_MESSAGE:
     mov es, ax
 
     xor di, di
-
-    .CLEARLOOP:
-        mov byte[ es: di ], 0
-        mov byte[ es: di + 1 ], 0x0A
-
-        add di, 2
-
-        cmp di, 80 * 25 * 2
-        jl .CLEARLOOP
-
-        mov si, word[bp + 4]
-        xor di, di
+    mov si, word[bp + 4]
 
     .MESSAGELOOP:
         mov al, byte[ si ]
@@ -136,18 +161,20 @@ PRINT_MESSAGE:
     pop bp
     ret
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Data
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-MESSAGE1: db 'Hello, World!', 0
-MESSAGE2: db 'disk error!', 0
+MESSAGE_DISK_ERROR: db 'disk error!', 0
+MESSAGE_READ_START: db 'Reading...', 0
+MESSAGE_READ_END: db 'Read successfully!', 0
 
 TOTAL_SECTOR_COUNT: dw 1024
 SECTOR_IDX: db 2
 HEAD_IDX: db 0
 TRACK_IDX: db 0
+
+BOOT_DRIVE: db 0
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
