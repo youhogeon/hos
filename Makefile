@@ -1,18 +1,17 @@
 all: disk.iso
 
-_bootloader:
+src/bootloader/bootloader.bin:
 	make -C src/bootloader
 
-_kernal32:
+src/kernal32/kernal32.bin:
 	make -C src/kernal32
 
-disk.img: _bootloader _kernal32
-	cat src/bootloader/bootloader.bin src/kernal32/dummy_os.bin > build/disk.img
+disk.img: src/bootloader/bootloader.bin src/kernal32/kernal32.bin
+	cat $^ > build/disk.img
 
 disk.iso: disk.img
 	truncate -s 1474560 build/disk.img
 	mkisofs -o build/disk.iso -b build/disk.img .
-
 
 clean:
 	make -C src/bootloader clean

@@ -1,7 +1,7 @@
-all: dummy_os.bin
+all: kernal32.bin
 
-dummy_os.bin: dummy_os.asm
-	nasm -o dummy_os.bin dummy_os.asm
+kernal32.bin: entrypoint.s
+	nasm -o kernal32.bin $<
 
 clean:
-	rm -f dummy_os.bin
+	rm -f kernal32.bin

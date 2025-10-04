@@ -19,23 +19,36 @@ BEGIN:
     mov bp, sp
     sti
 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Clear Display
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+CLEAR_DISPLAY:
+    mov ax, 0xB800
+    mov es, ax
 
-mov ax, 0xB800
-mov es, ax
+    xor di, di
 
-xor di, di
+    .CLEARLOOP:
+        mov byte[ es: di ], 0
+        mov byte[ es: di + 1 ], 0x0A
 
-.CLEARLOOP:
-    mov byte[ es: di ], 0
-    mov byte[ es: di + 1 ], 0x0A
+        add di, 2
 
-    add di, 2
+        cmp di, 80 * 25 * 2
+        jl .CLEARLOOP
 
-    cmp di, 80 * 25 * 2
-    jl .CLEARLOOP
+    ; move cursor to (0,0)
+    mov ah, 0x02
+    mov bh, 0
+    mov dh, 0
+    mov dl, 0
+    int 0x10
+
+    ; LOGO
+    push MESSAGE_LOGO
+    call PRINT_MESSAGE
+    add sp, 2
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -109,6 +122,7 @@ READDATA:
     .READLOOP_END:
         jmp HANDLE_SUCCESS
 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; HANDLER
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -139,57 +153,43 @@ HANDLE_END:
 PRINT_MESSAGE:
     push bp
     mov bp, sp
-    push ax
-    push bx
-    push dx
-    push es
-    push di
-    push si
+    pusha
 
-    mov ax, 0xB800
-    mov es, ax
-
-    xor di, di
     mov si, word[bp + 4]
 
     .MESSAGELOOP:
         mov al, byte[ si ]
-
         cmp al, 0
         je  .MESSAGELOOP_END
 
-        mov byte[ es: di ], al
+        mov ah, 0x0E
+        mov bh, 0
+        int 0x10
 
         inc si
-        add di, 2
-
         jmp .MESSAGELOOP
 
     .MESSAGELOOP_END:
-        mov bx, di
-        shr bx, 1
-        mov ah, 2
+        ; CRLF
+        mov ax, 0x0E0D
         mov bh, 0
-        mov dh, 0
-        mov dl, bl
+        int 0x10
+        mov ax, 0x0E0A
         int 0x10
 
-    pop si
-    pop di
-    pop es
-    pop dx
-    pop bx
-    pop ax
+    popa
     pop bp
     ret
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Data
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+MESSAGE_LOGO: db '===============================', 0x0D, 0x0A, '============ H O S ============', 0x0D, 0x0A, '===============================', 0x0D, 0x0A, 0
 MESSAGE_DISK_ERROR: db 'disk error!', 0
-MESSAGE_READ_START: db 'Reading...', 0
-MESSAGE_READ_END: db 'Read successfully!', 0
+MESSAGE_READ_START: db 'Loading kernal32...', 0
+MESSAGE_READ_END: db 'kernal32 loaded', 0
 
 OS_SECTOR_SIZE: dw 1024
 
