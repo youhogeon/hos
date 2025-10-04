@@ -1,19 +1,29 @@
-all: disk.iso
+SRC_BOOT = src/bootloader
+SRC_K32 = src/kernel32
 
-src/bootloader/bootloader.bin:
-	make -C src/bootloader
+BUILD_DIR = build
 
-src/kernal32/kernal32.bin:
-	make -C src/kernal32
+all: prepare $(BUILD_DIR)/disk.iso
 
-disk.img: src/bootloader/bootloader.bin src/kernal32/kernal32.bin
-	cat $^ > build/disk.img
+disk.img: prepare $(BUILD_DIR)/disk.img
 
-disk.iso: disk.img
-	truncate -s 1474560 build/disk.img
-	mkisofs -o build/disk.iso -b build/disk.img .
+prepare:
+	mkdir -p build
+
+$(SRC_BOOT)/bootloader.bin:
+	make -C $(SRC_BOOT)
+
+$(SRC_K32)/build/kernel32.bin:
+	make -C $(SRC_K32)
+
+$(BUILD_DIR)/disk.img: $(SRC_BOOT)/bootloader.bin $(SRC_K32)/build/kernel32.bin
+	cat $^ > $@
+
+$(BUILD_DIR)/disk.iso: $(BUILD_DIR)/disk.img
+	truncate -s 1474560 $<
+	mkisofs -o $@ -b $< .
 
 clean:
-	make -C src/bootloader clean
-	make -C src/kernal32 clean
-	rm -f build/*
+	make -C $(SRC_BOOT) clean
+	make -C $(SRC_K32) clean
+	rm -rf $(BUILD_DIR)

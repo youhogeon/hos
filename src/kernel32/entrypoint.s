@@ -49,7 +49,7 @@ PROTECTED_MODE_BEGIN:
     call PRINT_MESSAGE
     add esp, 4
 
-    jmp $
+    jmp dword 0x08:0x10200
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
