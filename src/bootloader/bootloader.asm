@@ -5,15 +5,17 @@ SECTION .text
 
 cli
 xor ax, ax
-mov ds, ax
 mov ss, ax
-mov [BOOT_DRIVE], dl
 mov sp, 0x7C00
+mov ax, cs
+mov ds, ax
+mov [BOOT_DRIVE], dl
 sti
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Clear Display
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 mov ax, 0xB800
 mov es, ax
 
@@ -36,8 +38,16 @@ xor di, di
 RESETDISK:
     mov dl, [BOOT_DRIVE]
     xor ax, ax
+    mov ah, 0x08
     int 0x13
     jc HANDLE_DISK_ERROR
+
+    inc dh
+    mov [GEOM_HEADS], dh
+
+    mov al, cl
+    and al, 0x3F
+    mov [GEOM_SPT], al
 
 READDATA:
     ; print
@@ -46,7 +56,7 @@ READDATA:
     add sp, 2
 
     mov si, 0x1000
-    mov di, word[ TOTAL_SECTOR_COUNT ]
+    mov di, word[ OS_SECTOR_SIZE ]
 
     .READLOOP:
         cmp di, 0
@@ -71,16 +81,21 @@ READDATA:
         add si, 0x0020
         mov es, si
 
+        ; increase sector
         inc byte[ SECTOR_IDX ]
         mov al, byte[ SECTOR_IDX ]
-        cmp al, 37
+        cmp al, byte [GEOM_SPT]
+        jle .READLOOP
+
+        ; increase head
+        mov byte[ SECTOR_IDX ], 1
+        inc byte[ HEAD_IDX ]
+        mov al, byte[ HEAD_IDX ]
+        cmp al, byte[ GEOM_HEADS ]
         jl .READLOOP
 
-        xor byte[ HEAD_IDX ], 1
-        mov byte[ SECTOR_IDX ], 1
-        cmp byte[ HEAD_IDX ], 0
-        jne .READLOOP
-
+        ; increase track
+        mov byte[ HEAD_IDX ], 0
         inc byte[ TRACK_IDX ]
         jmp .READLOOP
 
@@ -169,7 +184,11 @@ MESSAGE_DISK_ERROR: db 'disk error!', 0
 MESSAGE_READ_START: db 'Reading...', 0
 MESSAGE_READ_END: db 'Read successfully!', 0
 
-TOTAL_SECTOR_COUNT: dw 1024
+OS_SECTOR_SIZE: dw 1024
+
+GEOM_SPT: db 0
+GEOM_HEADS: db 0
+
 SECTOR_IDX: db 2
 HEAD_IDX: db 0
 TRACK_IDX: db 0
