@@ -3,14 +3,21 @@
 
 SECTION .text
 
-cli
-xor ax, ax
-mov ss, ax
-mov sp, 0x7C00
-mov ax, cs
-mov ds, ax
-mov [BOOT_DRIVE], dl
-sti
+jmp 0x0000:BEGIN
+
+BEGIN:
+    cli
+    mov [BOOT_DRIVE], dl
+
+    xor ax, ax
+    mov ds, ax
+    mov es, ax
+
+    mov ax, 0x9000
+    mov ss, ax
+    mov sp, 0xFFFE
+    mov bp, sp
+    sti
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; Clear Display
