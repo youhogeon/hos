@@ -2,25 +2,25 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "make all",
+      "label": "make",
       "type": "shell",
-      "command": "make clean && make all",
+      "command": "make clean && make disk.img",
       "group": {
         "kind": "build",
         "isDefault": true
       },
       "options": {
-        "cwd": "${workspaceFolder}/src"
+        "cwd": "${workspaceFolder}"
       },
       "problemMatcher": []
     },
     {
       "label": "run qemu",
       "type": "shell",
-      "dependsOn": "make all",
-      "command": "qemu-system-x86_64 -L . -m 64 -fda ./disk.img -display vnc=0.0.0.0:0 -audiodev none,id=none",
+      "dependsOn": "make",
+      "command": "qemu-system-x86_64 -L . -m 64 -fda ./build/disk.img -display vnc=0.0.0.0:0 -audiodev none,id=none -monitor stdio",
       "options": {
-        "cwd": "${workspaceFolder}/src",
+        "cwd": "${workspaceFolder}",
       }
     }
   ]
