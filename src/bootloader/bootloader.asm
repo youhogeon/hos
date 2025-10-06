@@ -31,7 +31,7 @@ CLEAR_DISPLAY:
 
     .CLEARLOOP:
         mov byte[ es: di ], 0
-        mov byte[ es: di + 1 ], 0x0A
+        mov byte[ es: di + 1 ], 0x03
 
         add di, 2
 

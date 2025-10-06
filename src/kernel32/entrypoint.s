@@ -53,9 +53,8 @@ PROTECTED_MODE_BEGIN:
     mov es, ax
     mov fs, ax
     mov gs, ax
-    
-    mov ax, 0x10
     mov ss, ax
+
     mov esp, 0xFFFC
     mov ebp, 0xFFFC
     
@@ -109,8 +108,7 @@ PRINT_MESSAGE:
         cmp al, 0
         je .MESSAGE_LOOP_END
 
-        mov ah, 0x0A
-        mov word [edi], ax
+        mov [edi], al
         add edi, 2
         inc esi
         jmp .MESSAGE_LOOP
