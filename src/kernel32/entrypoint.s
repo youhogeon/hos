@@ -12,20 +12,34 @@ BEGIN:
     mov ds, ax
     mov es, ax
 
-    ; get cursor position
+    ; get/set cursor position
     mov ah, 0x03
     mov bh, 0x00
     int 0x10
 
     mov [CURSOR_ROW], dh
 
-    ; jump to protected mode
-    lgdt [ GDTR ]
+    ; enable A20 line
+    mov ax, 0x2401
+    int 0x15
 
-    mov eax, 0x4000003B ; PG=0, CD=1, NW=0, AM=0, WP=0, NE=1, ET=1, TS=1, EM=0, MP=1, PE=1
-    mov cr0, eax
+    jc .HANDLE_A20_ERROR
+    jmp .HANDLE_A20_SUCCESS
 
-    jmp dword 0x08:PROTECTED_MODE_BEGIN
+    .HANDLE_A20_ERROR:
+        in al, 0x92
+        or al, 0x02
+        and al, 0xFE
+        out 0x92, al
+    
+    .HANDLE_A20_SUCCESS:
+        ; jump to protected mode
+        lgdt [ GDTR ]
+
+        mov eax, 0x4000003B ; PG=0, CD=1, NW=0, AM=0, WP=0, NE=1, ET=1, TS=1, EM=0, MP=1, PE=1
+        mov cr0, eax
+
+        jmp dword 0x08:PROTECTED_MODE_BEGIN
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
