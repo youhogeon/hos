@@ -61,28 +61,47 @@ PRINT_MESSAGE:
     mov ebp, esp
     pushad
 
-    mov esi, [ebp + 8]
-    mov eax, [CURSOR_ROW]
+    xor ebx, ebx
+    mov bl, [CURSOR_ROW]
+    mov cl, bl
+    inc cl
+    mov [CURSOR_ROW], cl
+    imul ebx, ebx, 160
+
     mov edi, 0xB8000
-    imul eax, eax, 160
-    add edi, eax
+    add edi, ebx
+    mov esi, [ebp + 8]
+
+    ; move cursor
+    shr ebx, 1
+    add ebx, 80
+
+    mov dx, 0x3D4
+    mov al, 0x0F
+    out dx, al
+    mov dx, 0x3D5
+    mov al, bl
+    out dx, al
+
+    mov dx, 0x3D4
+    mov al, 0x0E
+    out dx, al
+    mov dx, 0x3D5
+    mov al, bh
+    out dx, al
 
     .MESSAGE_LOOP:
         mov al, byte [esi]
         cmp al, 0
         je .MESSAGE_LOOP_END
 
-        mov ah, 0x07
+        mov ah, 0x0A
         mov word [edi], ax
         add edi, 2
         inc esi
         jmp .MESSAGE_LOOP
 
     .MESSAGE_LOOP_END:
-        ; move cursor to next line
-        mov eax, [CURSOR_ROW]
-        inc eax
-        mov [CURSOR_ROW], eax
 
     popad
     pop ebp
@@ -126,7 +145,7 @@ GDT:
         db 0x00
 GDTEND:
 
-CURSOR_ROW: dd 0
+CURSOR_ROW: db 0
 MESSAGE_SWITCHED_TO_32: db 'Switched to protected mode', 0
 
 times 512 - ($ - $$) db 0x00
