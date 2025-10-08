@@ -11,6 +11,8 @@
 #define FALSE   0
 #define NULL    0
 
+#define uint64 unsigned long long
+
 #pragma pack(push, 1)
 
 typedef struct kCharactorStruct {
