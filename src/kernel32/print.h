@@ -9,3 +9,12 @@
 
 void kPrintln(const char* str);
 void kPrintErr(const char* str);
+
+#pragma pack(push, 1)
+
+typedef struct kCharactorStruct {
+    BYTE bCharactor;
+    BYTE bAttribute;
+} CHARACTER;
+
+#pragma pack(pop)

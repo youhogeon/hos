@@ -13,13 +13,4 @@
 
 #define uint64 unsigned long long
 
-#pragma pack(push, 1)
-
-typedef struct kCharactorStruct {
-    BYTE bCharactor;
-    BYTE bAttribute;
-} CHARACTER;
-
-#pragma pack(pop)
-
 #endif /*__TYPES_H__*/

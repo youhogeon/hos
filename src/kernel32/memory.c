@@ -1,8 +1,9 @@
 #include "types.h"
+#include "memory.h"
 
 BOOL kInitMemory(void) {
     // Check Memort size (at least 64MB)
-    for (DWORD* addr = (DWORD*)0x100000; addr < (DWORD*)0x4000000; addr += 0x100000) {
+    for (DWORD* addr = (DWORD*)MEMORY_PAGE_BEGIN; addr < (DWORD*)MEMORY_REQUIREMENT; addr += 0x100000) {
         *addr = 0x12345678;
         if (*addr != 0x12345678) {
             return FALSE;
@@ -10,8 +11,8 @@ BOOL kInitMemory(void) {
     }
 
     // Clear Memory (1MB - 6MB)
-    DWORD* currentAddr = (DWORD*)0x100000;
-    DWORD* maxAddr = (DWORD*)0x600000;
+    DWORD* currentAddr = (DWORD*)MEMORY_PAGE_BEGIN;
+    DWORD* maxAddr = (DWORD*)MEMORY_K64_END;
 
     while (currentAddr < maxAddr) {
         *currentAddr = 0;
@@ -25,9 +26,9 @@ BOOL kInitMemory(void) {
 }
 
 void copyKernel64ImageTo2MB(void) {
-    DWORD* sourceAddr = (DWORD*)0x11000;
-    DWORD* endAddr = (DWORD*)0x100000;
-    DWORD* destAddr = (DWORD*)0x200000;
+    DWORD* sourceAddr = (DWORD*)MEMORY_K64_SOURCE;
+    DWORD* endAddr = (DWORD*)MEMORY_PAGE_BEGIN;
+    DWORD* destAddr = (DWORD*)MEMORY_K64_BEGIN;
 
     while (sourceAddr < endAddr) {
         *destAddr = *sourceAddr;
