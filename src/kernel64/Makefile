@@ -25,16 +25,18 @@ $(BUILD_DIR)/kernel64.elf.bin: $(BUILD_DIR)/dependency.dep $(BUILD_DIR)/kernel64
 ################################################################
 ENTRYPOINTSOURCEFILE = entrypoint.s
 ENTRYPOINTOBJECTFILE = $(BUILD_DIR)/entrypoint.o
-CENTRYPOINTOBJECTFILE = $(BUILD_DIR)/main.o
-CSOURCEFILES = $(wildcard ./*.c)
-ASSEMBLYSOURCEFILES = $(wildcard ./*.asm)
+CENTRYPOINTOBJECTFILE = $(BUILD_DIR)/_start.o
+CSOURCEFILES = $(wildcard ./*.c ./*/*.c)
+ASSEMBLYSOURCEFILES = $(wildcard ./*.asm ./*/*.asm)
 
 # C -> o
 $(BUILD_DIR)/%.o: ./%.c
+	mkdir -p $(dir $@)
 	$(GCC64) -c $< -o $@
 
 # ASM -> o
 $(BUILD_DIR)/%.o: ./%.asm
+	mkdir -p $(dir $@)
 	$(NASM64) -o $@ $<
 
 $(ENTRYPOINTOBJECTFILE): $(ENTRYPOINTSOURCEFILE)

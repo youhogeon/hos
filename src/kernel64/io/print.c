@@ -1,15 +1,5 @@
 #include "print.h"
-
-static inline void outb(WORD port, BYTE val) {
-    __asm__ volatile ("outb %0, %1" :: "a"(val), "Nd"(port));
-}
-
-static inline BYTE inb(WORD port) {
-    BYTE ret;
-    __asm__ volatile ("inb %1, %0" : "=a"(ret) : "Nd"(port));
-
-    return ret;
-}
+#include "../util/util.h"
 
 static WORD _readCursorPos(void) {
     outb(CRTC_INDEX, CRTC_CUR_LO);
@@ -27,30 +17,38 @@ static void _setCursorPos(WORD pos) {
     outb(CRTC_DATA, (BYTE)((pos >> 8) & 0xFF));
 }
 
-void kPrintln(const char* str) {
+int kPrint(const char* str) {
     CHARACTER* pstScreen = VGA_MEM;
     
     int pos = _readCursorPos();
     pstScreen += pos;
     
-    for (int i = 0; str[i] != 0; i++) {
+    int i = 0;
+    for (i = 0; str[i] != 0; i++) {
         pstScreen[i].bCharactor = str[i];
     }
 
-    _setCursorPos(pos + VGA_COLS);
+    _setCursorPos(pos + i);
+
+    return i;
 }
 
+void kPrintln(const char* str) {
+    int len = kPrint(str);
+    WORD pos = _readCursorPos();
+    pos += (VGA_COLS - (pos % VGA_COLS));
+
+    _setCursorPos(pos);
+}
 
 void kPrintErr(const char* str) {
     CHARACTER* pstScreen = VGA_MEM;
-    
     int pos = _readCursorPos();
     pstScreen += pos;
+
+    kPrintln(str);
     
     for (int i = 0; str[i] != 0; i++) {
-        pstScreen[i].bCharactor = str[i];
         pstScreen[i].bAttribute = 0x4F;
     }
-
-    _setCursorPos(pos + VGA_COLS);
 }
