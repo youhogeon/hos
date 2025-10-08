@@ -8,9 +8,12 @@
 * 0x1200 ~ : Kernel64
 
 ### Memory Map
+#### Bootloader, Kernel32
 * 0x7C00 ~ : Bootloader
 * ~ 0xFFFF : Bootloader Stack, Kernel32 Stack
 * 0x10000 ~ 0x10FFF : Kernel32
+
+#### Kernel64
 * 0x11000 ~ 0xFFFFF : Kernel64 (will be copied to 0x200000)
 * 0x100000 ~ 0x141FFF : Pages (PML4, PDPT, PD-Entry)
 * 0x142000 ~ 0x142FFF : TSS(104Byte), GDTR(16Byte), GDT
