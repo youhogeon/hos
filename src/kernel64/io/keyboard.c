@@ -1,5 +1,5 @@
 #include "keyboard.h"
-#include "../util/util.h"
+#include "../util/assembly.h"
 
 BOOL kIsOutputBufferFull(void) { return (inb(0x64) & 0x01) != 0; }
 

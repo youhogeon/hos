@@ -8,3 +8,7 @@ static inline BYTE inb(WORD port) {
 
     return ret;
 }
+
+static inline void loadGDTR(void* gdtr) { __asm__ volatile("lgdt (%0)" ::"r"(gdtr)); }
+static inline void loadIDTR(void* idtr) { __asm__ volatile("lidt (%0)" ::"r"(idtr)); }
+static inline void loadTR(WORD tr) { __asm__ volatile("ltr %w0" ::"r"(tr)); }

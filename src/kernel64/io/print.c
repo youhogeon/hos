@@ -1,5 +1,5 @@
 #include "print.h"
-#include "../util/util.h"
+#include "../util/assembly.h"
 
 static WORD _readCursorPos(void) {
     outb(CRTC_INDEX, CRTC_CUR_LO);
