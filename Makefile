@@ -1,5 +1,6 @@
 SRC_BOOT = src/bootloader
 SRC_K32 = src/kernel32
+SRC_K64 = src/kernel64
 
 BUILD_DIR = build
 
@@ -16,7 +17,10 @@ $(SRC_BOOT)/bootloader.bin:
 $(SRC_K32)/build/kernel32.bin:
 	make -C $(SRC_K32)
 
-$(BUILD_DIR)/disk.img: $(SRC_BOOT)/bootloader.bin $(SRC_K32)/build/kernel32.bin
+$(SRC_K64)/build/kernel64.bin:
+	make -C $(SRC_K64)
+
+$(BUILD_DIR)/disk.img: $(SRC_BOOT)/bootloader.bin $(SRC_K32)/build/kernel32.bin $(SRC_K64)/build/kernel64.bin
 	cat $^ > $@
 
 $(BUILD_DIR)/disk.iso: $(BUILD_DIR)/disk.img
@@ -26,4 +30,5 @@ $(BUILD_DIR)/disk.iso: $(BUILD_DIR)/disk.img
 clean:
 	make -C $(SRC_BOOT) clean
 	make -C $(SRC_K32) clean
+	make -C $(SRC_K64) clean
 	rm -rf $(BUILD_DIR)

@@ -1,6 +1,6 @@
 NASM32 = nasm
 GCC32 = gcc -c -m32 -ffreestanding
-LD32 = ld -melf_i386 -T ./ldscripts/elf_i386.x -nostdlib -e _start -Ttext 0x10200
+LD32 = ld -melf_i386 -T ../ldscripts/elf_i386.x -nostdlib -e _start -Ttext 0x10200
 OBJCOPY32 = objcopy -j .text -j .data -j .rodata -j .bss -S -O binary
 
 BUILD_DIR = build
@@ -15,6 +15,7 @@ clean:
 
 $(BUILD_DIR)/kernel32.bin: $(BUILD_DIR)/entrypoint.bin $(BUILD_DIR)/kernel32.elf.bin
 	cat $^ > $@
+	truncate -s 4K $@
 
 $(BUILD_DIR)/entrypoint.bin: entrypoint.s
 	$(NASM32) -o $@ $<

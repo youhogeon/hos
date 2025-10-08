@@ -39,7 +39,7 @@ BEGIN:
         mov eax, 0x4000003B ; PG=0, CD=1, NW=0, AM=0, WP=0, NE=1, ET=1, TS=1, EM=0, MP=1, PE=1
         mov cr0, eax
 
-        jmp dword 0x08:PROTECTED_MODE_BEGIN
+        jmp dword 0x18:PROTECTED_MODE_BEGIN
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -48,7 +48,7 @@ BEGIN:
 
 [BITS 32]
 PROTECTED_MODE_BEGIN:
-    mov ax, 0x10
+    mov ax, 0x20
     mov ds, ax
     mov es, ax
     mov fs, ax
@@ -62,7 +62,7 @@ PROTECTED_MODE_BEGIN:
     call PRINT_MESSAGE
     add esp, 4
 
-    jmp dword 0x08:0x10200
+    jmp dword 0x18:0x10200
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -140,7 +140,23 @@ GDT:
         db 0x00         ; G, D, L, Limit[19:16]
         db 0x00         ; Base [31:24]  
 
-    CODE_DESCRIPTOR:     
+    K64_CODE_DESCRIPTOR:     
+        dw 0xFFFF
+        dw 0x0000
+        db 0x00
+        db 0x9A         ; P=1, DPL=0, Code Segment, Execute/Read 
+        db 0xAF         ; G=1, D=0, L=0, Limit=0
+        db 0x00
+        
+    K64_DATA_DESCRIPTOR:
+        dw 0xFFFF
+        dw 0x0000
+        db 0x00
+        db 0x92         ; P=1, DPL=0, Data Segment, Read/Write
+        db 0xAF         ; G=1, D=0, L=0, Limit=0
+        db 0x00
+
+    K32_CODE_DESCRIPTOR:     
         dw 0xFFFF
         dw 0x0000
         db 0x00
@@ -148,7 +164,7 @@ GDT:
         db 0xCF         ; G=1, D=1, L=0, Limit=0
         db 0x00
         
-    DATA_DESCRIPTOR:
+    K32_DATA_DESCRIPTOR:
         dw 0xFFFF
         dw 0x0000
         db 0x00
@@ -158,6 +174,6 @@ GDT:
 GDTEND:
 
 CURSOR_ROW: db 0
-MESSAGE_SWITCHED_TO_32: db 'Switched to protected mode', 0
+MESSAGE_SWITCHED_TO_32: db 'Switched to protected mode.', 0
 
 times 512 - ($ - $$) db 0x00

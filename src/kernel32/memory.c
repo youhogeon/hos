@@ -23,3 +23,15 @@ BOOL kInitMemory(void) {
 
     return TRUE;
 }
+
+void copyKernel64ImageTo2MB(void) {
+    DWORD* sourceAddr = (DWORD*)0x11000;
+    DWORD* endAddr = (DWORD*)0x100000;
+    DWORD* destAddr = (DWORD*)0x200000;
+
+    while (sourceAddr < endAddr) {
+        *destAddr = *sourceAddr;
+        sourceAddr++;
+        destAddr++;
+    }
+}
