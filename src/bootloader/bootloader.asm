@@ -49,6 +49,9 @@ CLEAR_DISPLAY:
     push MESSAGE_LOGO
     call PRINT_MESSAGE
     add sp, 2
+    push VERSION
+    call PRINT_MESSAGE
+    add sp, 2
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -160,7 +163,8 @@ PRINT_MESSAGE:
     .MESSAGELOOP:
         mov al, byte[ si ]
         cmp al, 0
-        je  .MESSAGELOOP_END
+        jl  .MESSAGELOOP_END
+        je  .CRLF
 
         mov ah, 0x0E
         mov bh, 0
@@ -169,13 +173,14 @@ PRINT_MESSAGE:
         inc si
         jmp .MESSAGELOOP
 
-    .MESSAGELOOP_END:
-        ; CRLF
+    .CRLF:
         mov ax, 0x0E0D
         mov bh, 0
         int 0x10
         mov ax, 0x0E0A
         int 0x10
+
+    .MESSAGELOOP_END:
 
     popa
     pop bp
@@ -186,7 +191,7 @@ PRINT_MESSAGE:
 ; Data
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-MESSAGE_LOGO: db '===============================', 0x0D, 0x0A, '============ H O S ============', 0x0D, 0x0A, '===============================', 0x0D, 0x0A, 0
+MESSAGE_LOGO: db '     __  __   ____    _____', 0x0D, 0x0A, '    / / / /  / __ \  / ___/', 0x0D, 0x0A, '   / /_/ /  / / / /  \__ \', 0x0D, 0x0A, '  / __  /  / /_/ /  ___/ /', 0x0D, 0x0A, ' /_/ /_/   \____/  /____/   ', -1
 MESSAGE_DISK_ERROR: db 'disk error!', 0
 MESSAGE_READ_START: db 'Kernel loading...', 0
 MESSAGE_READ_END: db 'Kernel loaded.', 0
@@ -207,5 +212,6 @@ BOOT_DRIVE: db 0
 ; Bootloader Signature
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-times 510 - ($ - $$) db 0x00
+times 497 - ($ - $$) db 0x00
+VERSION: db 'v00000000.00', 0 ; 12 bytes (will be replaced on build)
 dw 0xAA55

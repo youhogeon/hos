@@ -10,7 +10,10 @@
         "isDefault": true
       },
       "options": {
-        "cwd": "${workspaceFolder}"
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "HOS_VERSION": "vYYYYMMDD.SQ"
+        }
       },
       "problemMatcher": []
     },

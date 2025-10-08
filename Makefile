@@ -4,6 +4,9 @@ SRC_K64 = src/kernel64
 
 BUILD_DIR = build
 
+VER_OFFSET = 497
+VER_BYTES  = 12
+
 all: prepare $(BUILD_DIR)/disk.iso
 
 disk.img: prepare $(BUILD_DIR)/disk.img
@@ -22,6 +25,9 @@ $(SRC_K64)/build/kernel64.bin:
 
 $(BUILD_DIR)/disk.img: $(SRC_BOOT)/bootloader.bin $(SRC_K32)/build/kernel32.bin $(SRC_K64)/build/kernel64.bin
 	cat $^ > $@
+ifdef HOS_VERSION
+	printf '%s' "$(HOS_VERSION)" | dd of=$@ bs=1 seek=$(VER_OFFSET) count=$(VER_BYTES) conv=notrunc status=none
+endif
 
 $(BUILD_DIR)/disk.iso: $(BUILD_DIR)/disk.img
 	truncate -s 1474560 $<
