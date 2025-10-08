@@ -1,12 +1,10 @@
 #include "print.h"
 
-static inline void outb(WORD port, BYTE val) {
-    __asm__ volatile ("outb %0, %1" :: "a"(val), "Nd"(port));
-}
+static inline void outb(WORD port, BYTE val) { __asm__ volatile("outb %0, %1" ::"a"(val), "Nd"(port)); }
 
 static inline BYTE inb(WORD port) {
     BYTE ret;
-    __asm__ volatile ("inb %1, %0" : "=a"(ret) : "Nd"(port));
+    __asm__ volatile("inb %1, %0" : "=a"(ret) : "Nd"(port));
 
     return ret;
 }
@@ -29,10 +27,10 @@ static void _setCursorPos(WORD pos) {
 
 void kPrintln(const char* str) {
     CHARACTER* pstScreen = VGA_MEM;
-    
+
     int pos = _readCursorPos();
     pstScreen += pos;
-    
+
     for (int i = 0; str[i] != 0; i++) {
         pstScreen[i].bCharactor = str[i];
     }
@@ -40,13 +38,12 @@ void kPrintln(const char* str) {
     _setCursorPos(pos + VGA_COLS);
 }
 
-
 void kPrintErr(const char* str) {
     CHARACTER* pstScreen = VGA_MEM;
-    
+
     int pos = _readCursorPos();
     pstScreen += pos;
-    
+
     for (int i = 0; str[i] != 0; i++) {
         pstScreen[i].bCharactor = str[i];
         pstScreen[i].bAttribute = 0x4F;

@@ -19,10 +19,10 @@ static void _setCursorPos(WORD pos) {
 
 int kPrint(const char* str) {
     CHARACTER* pstScreen = VGA_MEM;
-    
+
     int pos = _readCursorPos();
     pstScreen += pos;
-    
+
     int i = 0;
     for (i = 0; str[i] != 0; i++) {
         pstScreen[i].bCharactor = str[i];
@@ -47,7 +47,7 @@ void kPrintErr(const char* str) {
     pstScreen += pos;
 
     kPrintln(str);
-    
+
     for (int i = 0; str[i] != 0; i++) {
         pstScreen[i].bAttribute = 0x4F;
     }

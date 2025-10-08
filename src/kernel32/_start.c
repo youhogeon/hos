@@ -1,19 +1,21 @@
-#include "memory.h"
-#include "print.h"
-#include "types.h"
-#include "paging.h"
 #include "cpu.h"
 #include "k64switch.h"
+#include "memory.h"
+#include "paging.h"
+#include "print.h"
+#include "types.h"
 
-void _start( void ) {
+void _start(void) {
     if (kIsSupport64() == FALSE) {
         kPrintErr("This CPU does not support 64bit mode.");
-        while(1);
+        while (1) {
+        }
     }
 
     if (kInitMemory() == FALSE) {
         kPrintErr("Memory initialization failed.");
-        while(1);
+        while (1) {
+        }
     }
 
     kInitPageTables();

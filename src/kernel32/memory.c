@@ -1,5 +1,5 @@
-#include "types.h"
 #include "memory.h"
+#include "types.h"
 
 BOOL kInitMemory(void) {
     // Check Memort size (at least 64MB)

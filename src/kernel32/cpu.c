@@ -4,6 +4,6 @@
 BOOL kIsSupport64(void) {
     DWORD dwEAX, dwEBX, dwECX, dwEDX;
     kReadCPUID(0x80000001, &dwEAX, &dwEBX, &dwECX, &dwEDX);
-    
-    return (dwEDX & ( 1 << 29 )) != 0;
+
+    return (dwEDX & (1 << 29)) != 0;
 }

@@ -3,12 +3,12 @@
 
 #include "types.h"
 
-#define VGA_MEM        ((CHARACTER*)0xB8000)
-#define VGA_COLS       80
-#define CRTC_INDEX     0x3D4
-#define CRTC_DATA      0x3D5
-#define CRTC_CUR_LO    0x0F
-#define CRTC_CUR_HI    0x0E
+#define VGA_MEM ((CHARACTER*)0xB8000)
+#define VGA_COLS 80
+#define CRTC_INDEX 0x3D4
+#define CRTC_DATA 0x3D5
+#define CRTC_CUR_LO 0x0F
+#define CRTC_CUR_HI 0x0E
 
 void kPrintln(const char* str);
 void kPrintErr(const char* str);
