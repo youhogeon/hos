@@ -1,3 +1,6 @@
+#ifndef __PRINT_H__
+#define __PRINT_H__
+
 #include "types.h"
 
 #define VGA_MEM        ((CHARACTER*)0xB8000)
@@ -18,3 +21,5 @@ typedef struct kCharactorStruct {
 } CHARACTER;
 
 #pragma pack(pop)
+
+#endif /*__PRINT_H__*/

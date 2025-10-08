@@ -6,20 +6,18 @@
 #include "k64switch.h"
 
 void _start( void ) {
-    kPrintln("Kenrel32 Initializing...");
-
     if (kIsSupport64() == FALSE) {
         kPrintErr("This CPU does not support 64bit mode.");
         while(1);
     }
 
     if (kInitMemory() == FALSE) {
-        kPrintErr("Memory Initialization Failed.");
+        kPrintErr("Memory initialization failed.");
         while(1);
     }
 
     kInitPageTables();
-    kPrintln("Kernel32 Initialized.");
+    kPrintln("Kernel32 initialized.");
 
     copyKernel64ImageTo2MB();
     kSwitchTo64();

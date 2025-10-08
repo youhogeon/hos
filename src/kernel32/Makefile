@@ -28,7 +28,7 @@ $(BUILD_DIR)/kernel32.elf.bin: $(BUILD_DIR)/dependency.dep $(BUILD_DIR)/kernel32
 # C
 ################################################################
 
-CENTRYPOINTOBJECTFILE = $(BUILD_DIR)/main.o
+CENTRYPOINTOBJECTFILE = $(BUILD_DIR)/_start.o
 CSOURCEFILES = $(wildcard ./*.c)
 ASSEMBLYSOURCEFILES = $(wildcard ./*.asm)
 

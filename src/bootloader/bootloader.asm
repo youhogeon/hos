@@ -188,8 +188,8 @@ PRINT_MESSAGE:
 
 MESSAGE_LOGO: db '===============================', 0x0D, 0x0A, '============ H O S ============', 0x0D, 0x0A, '===============================', 0x0D, 0x0A, 0
 MESSAGE_DISK_ERROR: db 'disk error!', 0
-MESSAGE_READ_START: db 'Kernel32 Loading...', 0
-MESSAGE_READ_END: db 'Kernel32 Loaded.', 0
+MESSAGE_READ_START: db 'Kernel loading...', 0
+MESSAGE_READ_END: db 'Kernel loaded.', 0
 
 OS_SECTOR_SIZE: dw 1024
 
