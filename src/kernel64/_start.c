@@ -1,26 +1,29 @@
+#include "interrupt/PIC.h"
 #include "io/keyboard.h"
-#include "io/print.h"
 #include "memory/discriptor.h"
 #include "types.h"
 #include "util/assembly.h"
+#include "util/print.h"
+
+void _initMemory(void);
 
 void _start(void) {
     kPrintln("Switched to long mode.");
 
-    kInitGDTAndTSS();
-    kInitIDT();
-    loadGDTR((GDTR*)GDTR_STARTADDRESS);
-    loadTR(GDT_TSSSEGMENT);
-    loadIDTR((IDTR*)IDTR_STARTADDRESS);
+    _initMemory();
+    kPrintln("Memory Initialized.");
+
+    kInitPIC();
+    kMaskPICInterrupt(0);
 
     if (kActivateKeyboard() == FALSE) {
         kPrintErr("Keyboard activation failed.");
-        while (1)
-            ;
+        return;
     }
 
     kPrintln("Keyboard activated.");
 
+    sti();
     kPrintln("Kernel64 initialized.");
 
     while (1) {
@@ -46,4 +49,16 @@ void _start(void) {
             kPrint(key);
         }
     }
+}
+
+void _initMemory(void) {
+    kInitGDTAndTSS();
+    kInitIDT();
+
+    loadGDTR((GDTR*)GDTR_STARTADDRESS);
+    loadTR(GDT_TSSSEGMENT);
+    loadIDTR((IDTR*)IDTR_STARTADDRESS);
+
+    reloadCS(GDT_KERNELCODESEGMENT);
+    reloadDS(GDT_KERNELDATASEGMENT);
 }

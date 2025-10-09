@@ -12,3 +12,9 @@ static inline BYTE inb(WORD port) {
 static inline void loadGDTR(void* gdtr) { __asm__ volatile("lgdt (%0)" ::"r"(gdtr)); }
 static inline void loadIDTR(void* idtr) { __asm__ volatile("lidt (%0)" ::"r"(idtr)); }
 static inline void loadTR(WORD tr) { __asm__ volatile("ltr %w0" ::"r"(tr)); }
+
+static inline void sti(void) { __asm__ volatile("sti"); }
+static inline void cli(void) { __asm__ volatile("cli"); }
+
+void reloadCS(WORD selector);
+void reloadDS(WORD selector);

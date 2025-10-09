@@ -28,7 +28,7 @@
 #define GDT_FLAGS_LOWER_USERDATA (GDT_TYPE_DATA | GDT_FLAGS_LOWER_S | GDT_FLAGS_LOWER_DPL3 | GDT_FLAGS_LOWER_P)
 
 #define GDT_FLAGS_UPPER_CODE (GDT_FLAGS_UPPER_G | GDT_FLAGS_UPPER_L)
-#define GDT_FLAGS_UPPER_DATA (GDT_FLAGS_UPPER_G | GDT_FLAGS_UPPER_L)
+#define GDT_FLAGS_UPPER_DATA (GDT_FLAGS_UPPER_G)
 #define GDT_FLAGS_UPPER_TSS (GDT_FLAGS_UPPER_G)
 
 // Constants
@@ -42,7 +42,7 @@
 #define TSS_STARTADDRESS 0x142000
 #define TSS_SIZE (sizeof(TSS))
 
-#define GDTR_STARTADDRESS TSS_STARTADDRESS + TSS_SIZE
+#define GDTR_STARTADDRESS (TSS_STARTADDRESS + TSS_SIZE)
 
 ////////////////////////////////////////////////////////////////
 // IDT, IST
@@ -148,6 +148,5 @@ void kinitTSS(TSS* pstTSS);
 
 void kInitIDT(void);
 void kSetIDTEntry(IDTENTRY* pstEntry, void* pvHandler, WORD wSelector, BYTE bIST, BYTE bFlags, BYTE bType);
-void kDummyHandler(void);
 
 #endif

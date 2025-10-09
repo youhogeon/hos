@@ -6,6 +6,8 @@
 #include "types.h"
 
 void _start(void) {
+    kPrintln("Switched to protected mode.");
+
     if (kIsSupport64() == FALSE) {
         kPrintErr("This CPU does not support 64bit mode.");
         while (1) {

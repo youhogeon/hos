@@ -12,13 +12,6 @@ BEGIN:
     mov ds, ax
     mov es, ax
 
-    ; get/set cursor position
-    mov ah, 0x03
-    mov bh, 0x00
-    int 0x10
-
-    mov [CURSOR_ROW], dh
-
     ; enable A20 line
     mov ax, 0x2401
     int 0x15
@@ -57,67 +50,8 @@ PROTECTED_MODE_BEGIN:
 
     mov esp, 0xFFFC
     mov ebp, 0xFFFC
-    
-    push MESSAGE_SWITCHED_TO_32
-    call PRINT_MESSAGE
-    add esp, 4
 
     jmp dword 0x18:0x10200
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; FUNCTIONS
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-PRINT_MESSAGE:
-    push ebp
-    mov ebp, esp
-    pushad
-
-    xor ebx, ebx
-    mov bl, [CURSOR_ROW]
-    mov cl, bl
-    inc cl
-    mov [CURSOR_ROW], cl
-    imul ebx, ebx, 160
-
-    mov edi, 0xB8000
-    add edi, ebx
-    mov esi, [ebp + 8]
-
-    ; move cursor
-    shr ebx, 1
-    add ebx, 80
-
-    mov dx, 0x3D4
-    mov al, 0x0F
-    out dx, al
-    mov dx, 0x3D5
-    mov al, bl
-    out dx, al
-
-    mov dx, 0x3D4
-    mov al, 0x0E
-    out dx, al
-    mov dx, 0x3D5
-    mov al, bh
-    out dx, al
-
-    .MESSAGE_LOOP:
-        mov al, byte [esi]
-        cmp al, 0
-        je .MESSAGE_LOOP_END
-
-        mov [edi], al
-        add edi, 2
-        inc esi
-        jmp .MESSAGE_LOOP
-
-    .MESSAGE_LOOP_END:
-
-    popad
-    pop ebp
-    ret
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -172,8 +106,5 @@ GDT:
         db 0xCF         ; G=1, D=1, L=0, Limit=0
         db 0x00
 GDTEND:
-
-CURSOR_ROW: db 0
-MESSAGE_SWITCHED_TO_32: db 'Switched to protected mode.', 0
 
 times 512 - ($ - $$) db 0x00
