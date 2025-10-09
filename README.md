@@ -21,3 +21,12 @@
 * 0x200000 ~ 0x5FFFFF : Kernel64
 * 0x600000 ~ 0x6FFFFF : Kernel64 Stack
 * 0x700000 ~ 0x7FFFFF : IST
+
+## Build
+```shell
+# build
+HOS_VERSION="12_bytes_str" make all
+
+# run (w. QEMU)
+qemu-system-x86_64 -L . -m 64 -fda ./build/disk.img
+```
