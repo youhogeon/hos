@@ -1,6 +1,7 @@
 #include "handler.h"
+#include "../io/keyboard.h"
+#include "../io/video.h"
 #include "../util/assembly.h"
-#include "../util/print.h"
 #include "PIC.h"
 
 void kCommonExceptionHandler(int iVectorNumber, QWORD qwErrorCode) {
@@ -21,17 +22,7 @@ void kCommonExceptionHandler(int iVectorNumber, QWORD qwErrorCode) {
 void kCommonInterruptHandler(int iVectorNumber) { kSendEOIToPIC(iVectorNumber - PIC_IRQSTART_VECTOR); }
 
 void kKeyboardHandler(int iVectorNumber) {
-    kPrint("Keyboard: ");
-    BYTE sc = inb(0x60);
-
-    char vcBuffer[4] = {
-        '0' + sc / 100,
-        '0' + (sc / 10) % 10,
-        '0' + sc % 10,
-        0,
-    };
-
-    kPrintln(vcBuffer);
+    kGetKeyAndPutQueue();
 
     kSendEOIToPIC(iVectorNumber - PIC_IRQSTART_VECTOR);
 }

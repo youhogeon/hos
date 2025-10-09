@@ -53,6 +53,8 @@
 #define KEY_F12 0x9F
 #define KEY_PAUSE 0xA0
 
+#define KEY_MAXQUEUECOUNT 128
+
 #pragma pack(push, 1)
 
 // 스캔 코드 테이블을 구성하는 항목
@@ -77,15 +79,20 @@ typedef struct kKeyboardManagerStruct {
     int iSkipCountForPause;
 } KEYBOARDMANAGER;
 
+typedef struct kKeyDataStruct {
+    BYTE bScanCode;
+    BYTE bASCIICode;
+    BYTE bFlags;
+} KEYDATA;
+
 #pragma pack(pop)
 
-BOOL kIsOutputBufferFull(void);
-BOOL kIsInputBufferFull(void);
-void waitInputBufferEmpty(void);
-void waitOutputBufferFull(void);
+BOOL kInitKeyboard(void);
 BOOL kActivateKeyboard(void);
-BYTE kGetKeyboardScanCode(void);
+BYTE kGetKeyAndPutQueue(void);
 BOOL kChangeKeyboardLED(BOOL bCapsLockOn, BOOL bNumLockOn, BOOL bScrollLockOn);
+BOOL kConvertScanCodeAndPutQueue(BYTE bScanCode);
+BOOL kGetKeyFromKeyQueue(KEYDATA* pstData);
 
 BOOL kIsAlphabetScanCode(BYTE bScanCode);
 BOOL kIsNumberOrSymbolScanCode(BYTE bScanCode);

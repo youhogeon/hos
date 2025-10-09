@@ -1,11 +1,15 @@
 #include "keyboard.h"
 #include "../util/assembly.h"
+#include "../util/queue.h"
 
-BOOL kIsOutputBufferFull(void) { return (inb(0x64) & 0x01) != 0; }
+static QUEUE gs_stKeyQueue;
+static KEYDATA gs_vstKeyQueueBuffer[KEY_MAXQUEUECOUNT];
 
-BOOL kIsInputBufferFull(void) { return (inb(0x64) & 0x02) != 0; }
+static BOOL kIsOutputBufferFull(void) { return (inb(0x64) & 0x01) != 0; }
 
-void waitInputBufferEmpty(void) {
+static BOOL kIsInputBufferFull(void) { return (inb(0x64) & 0x02) != 0; }
+
+static void waitInputBufferEmpty(void) {
     for (int i = 0; i < 0xFFFF; i++) {
         if (kIsInputBufferFull() == FALSE) {
             return;
@@ -13,7 +17,7 @@ void waitInputBufferEmpty(void) {
     }
 }
 
-void waitOutputBufferFull(void) {
+static void waitOutputBufferFull(void) {
     for (int i = 0; i < 0xFFFF; i++) {
         if (kIsOutputBufferFull() == TRUE) {
             return;
@@ -26,12 +30,22 @@ static BOOL waitACK(void) {
         // Wait until the output buffer is full
         waitOutputBufferFull();
 
-        if (inb(0x60) == 0xFA) {
+        BYTE bData = inb(0x60);
+
+        if (bData == 0xFA) {
             return TRUE;
         }
+
+        kConvertScanCodeAndPutQueue(bData);
     }
 
     return FALSE;
+}
+
+BOOL kInitKeyboard(void) {
+    kInitQueue(&gs_stKeyQueue, gs_vstKeyQueueBuffer, KEY_MAXQUEUECOUNT, sizeof(KEYDATA));
+
+    return kActivateKeyboard();
 }
 
 BOOL kActivateKeyboard(void) {
@@ -54,11 +68,13 @@ BOOL kActivateKeyboard(void) {
     return TRUE;
 }
 
-BYTE kGetKeyboardScanCode(void) {
-    while (kIsOutputBufferFull() == FALSE)
-        ;
+BOOL kGetKeyAndPutQueue(void) {
+    if (kIsOutputBufferFull() == FALSE) {
+        return FALSE;
+    }
 
-    return inb(0x60);
+    BYTE scanCode = inb(0x60);
+    return kConvertScanCodeAndPutQueue(scanCode);
 }
 
 BOOL kChangeKeyboardLED(BOOL bCapsLockOn, BOOL bNumLockOn, BOOL bScrollLockOn) {
@@ -82,6 +98,37 @@ BOOL kChangeKeyboardLED(BOOL bCapsLockOn, BOOL bNumLockOn, BOOL bScrollLockOn) {
     }
 
     return TRUE;
+}
+
+BOOL kConvertScanCodeAndPutQueue(BYTE bScanCode) {
+    KEYDATA stData;
+    BOOL bResult = FALSE;
+    BOOL bPreviousInterrupt;
+
+    stData.bScanCode = bScanCode;
+
+    if (kConvertScanCodeToASCIICode(bScanCode, &(stData.bASCIICode), &(stData.bFlags)) == TRUE) {
+        bPreviousInterrupt = kSetInterruptFlag(FALSE);
+        bResult = kPutQueue(&gs_stKeyQueue, &stData);
+        kSetInterruptFlag(bPreviousInterrupt);
+    }
+
+    return bResult;
+}
+
+BOOL kGetKeyFromKeyQueue(KEYDATA* pstData) {
+    BOOL bResult;
+    BOOL bPreviousInterrupt;
+
+    if (kIsQueueEmpty(&gs_stKeyQueue) == TRUE) {
+        return FALSE;
+    }
+
+    bPreviousInterrupt = kSetInterruptFlag(FALSE);
+    bResult = kGetQueue(&gs_stKeyQueue, pstData);
+    kSetInterruptFlag(bPreviousInterrupt);
+
+    return bResult;
 }
 
 ////////////////////////////////////////////////////////////////

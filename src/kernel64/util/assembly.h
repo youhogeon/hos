@@ -18,3 +18,32 @@ static inline void cli(void) { __asm__ volatile("cli"); }
 
 void reloadCS(WORD selector);
 void reloadDS(WORD selector);
+
+static inline QWORD kReadRFLAGS(void) {
+    QWORD qwRFLAGS;
+
+    __asm__ volatile("pushfq\n"
+                     "popq %0"
+                     : "=r"(qwRFLAGS));
+
+    return qwRFLAGS;
+}
+
+static BOOL kSetInterruptFlag(BOOL bEnableInterrupt) {
+    QWORD qwRFLAGS;
+
+    // 이전의 RFLAGS 레지스터 값을 읽은 뒤에 인터럽트 가능/불가 처리
+    qwRFLAGS = kReadRFLAGS();
+    if (bEnableInterrupt == TRUE) {
+        sti();
+    } else {
+        cli();
+    }
+
+    // 이전 RFLAGS 레지스터의 IF 비트(비트 9)를 확인하여 이전의 인터럽트 상태를 반환
+    if (qwRFLAGS & 0x0200) {
+        return TRUE;
+    }
+
+    return FALSE;
+}

@@ -1,4 +1,4 @@
-#include "print.h"
+#include "video.h"
 #include "../util/assembly.h"
 
 static WORD gStartAddr = 0;
@@ -111,30 +111,52 @@ static void _putChar(WORD* pCursorAbs, char ch, BYTE attr) {
 }
 
 // API
-int kPrint(const char* str) {
+int kPrint(const char* str) { return kPrintColor(str, DEFAULT_ATTR); }
+
+int kPrintColor(const char* str, BYTE attr) {
     WORD pos = _readCursorPos();
     int i = 0;
     for (; str[i] != 0; i++) {
-        _putChar(&pos, str[i], DEFAULT_ATTR);
+        _putChar(&pos, str[i], attr);
     }
     return i;
 }
 
-void kPrintln(const char* str) {
+void kPrintErr(const char* str) { kPrintColor(str, CONSOLE_BACKGROUND_RED | CONSOLE_FOREGROUND_BRIGHTWHITE); }
+
+void kPrintln(const char* str) { kPrintlnColor(str, DEFAULT_ATTR); }
+
+void kPrintlnColor(const char* str, BYTE attr) {
     WORD pos = _readCursorPos();
     for (int i = 0; str[i] != 0; i++) {
-        _putChar(&pos, str[i], DEFAULT_ATTR);
+        _putChar(&pos, str[i], attr);
     }
 
     // prevent duplicated newline
     WORD col = _visualCol(pos = _readCursorPos());
     if (col != 0)
-        _putChar(&pos, '\n', DEFAULT_ATTR);
+        _putChar(&pos, '\n', attr);
 }
 
-void kPrintErr(const char* str) {
-    WORD pos = _readCursorPos();
-    for (int i = 0; str[i] != 0; i++) {
-        _putChar(&pos, str[i], 0x4F);
+void kClear(int clearStart) {
+    if (clearStart < 0)
+        clearStart = 0;
+    if (clearStart > VGA_ROWS)
+        clearStart = VGA_ROWS;
+
+    volatile CHARACTER* vram = VGA_MEM;
+
+    for (int y = clearStart; y < VGA_ROWS; y++) {
+        WORD base = WRAP(gStartAddr + y * VGA_COLS);
+        for (int x = 0; x < VGA_COLS; x++) {
+            WORD p = WRAP(base + x);
+            vram[p].bCharactor = ' ';
+            vram[p].bAttribute = DEFAULT_ATTR;
+        }
     }
+
+    WORD cursor = WRAP(gStartAddr + clearStart * VGA_COLS);
+    _setCursorPos(cursor);
+
+    gScrollCount = 0;
 }

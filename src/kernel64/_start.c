@@ -1,51 +1,47 @@
 #include "interrupt/PIC.h"
 #include "io/keyboard.h"
+#include "io/video.h"
 #include "memory/discriptor.h"
 #include "types.h"
 #include "util/assembly.h"
-#include "util/print.h"
 
 void _initMemory(void);
 
 void _start(void) {
     kPrintln("Switched to long mode.");
 
+    // Init memory
     _initMemory();
-    kPrintln("Memory Initialized.");
+    kPrintln("Memory initialized.");
 
+    // Init PIC, keyboard
     kInitPIC();
     kMaskPICInterrupt(0);
 
-    if (kActivateKeyboard() == FALSE) {
-        kPrintErr("Keyboard activation failed.");
+    if (kInitKeyboard() == FALSE) {
+        kPrintErr("Keyboard initialization failed.");
         return;
     }
 
-    kPrintln("Keyboard activated.");
+    kPrintln("Keyboard initialized.");
 
+    // 마무리
     sti();
     kPrintln("Kernel64 initialized.");
+    kClear(5);
+    kPrintln(" ");
 
     while (1) {
-        if (kIsOutputBufferFull() == FALSE) {
+        KEYDATA stData;
+        if (kGetKeyFromKeyQueue(&stData) == FALSE) {
             continue;
         }
 
-        BYTE scanCode = kGetKeyboardScanCode();
-        BYTE flag;
-        char key[2] = {
-            0,
-        };
-
-        if (scanCode == 28) {
-            scanCode = 0 / 0;
-        }
-
-        if (kConvertScanCodeToASCIICode(scanCode, (BYTE*)&key[0], &flag) == TRUE) {
-            if ((flag & KEY_FLAGS_DOWN) == 0) {
-                continue;
-            }
-
+        if (stData.bFlags & KEY_FLAGS_DOWN) {
+            char key[2] = {
+                stData.bASCIICode,
+                0,
+            };
             kPrint(key);
         }
     }
