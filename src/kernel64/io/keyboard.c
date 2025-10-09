@@ -131,6 +131,29 @@ BOOL kGetKeyFromKeyQueue(KEYDATA* pstData) {
     return bResult;
 }
 
+BYTE kGetCh(void) {
+    KEYDATA stData;
+
+    while (1) {
+        while (kGetKeyFromKeyQueue(&stData) == FALSE) {
+        }
+
+        if (stData.bFlags & KEY_FLAGS_DOWN) {
+            return stData.bASCIICode;
+        }
+    }
+}
+
+void kReboot(void) {
+    waitInputBufferEmpty();
+
+    outb(0x64, 0xD1);
+    outb(0x60, 0x00);
+
+    while (1) {
+    }
+}
+
 ////////////////////////////////////////////////////////////////
 // Scan Code Conversion
 ////////////////////////////////////////////////////////////////

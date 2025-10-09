@@ -93,11 +93,14 @@ BYTE kGetKeyAndPutQueue(void);
 BOOL kChangeKeyboardLED(BOOL bCapsLockOn, BOOL bNumLockOn, BOOL bScrollLockOn);
 BOOL kConvertScanCodeAndPutQueue(BYTE bScanCode);
 BOOL kGetKeyFromKeyQueue(KEYDATA* pstData);
+BYTE kGetCh(void);
+
+void kReboot(void);
 
 BOOL kIsAlphabetScanCode(BYTE bScanCode);
 BOOL kIsNumberOrSymbolScanCode(BYTE bScanCode);
 BOOL kIsNumberPadScanCode(BYTE bScanCode);
-BOOL kIsUseCombinedCode(BOOL bScanCode);
+BOOL kIsUseCombinedCode(BYTE bScanCode);
 BOOL kConvertScanCodeToASCIICode(BYTE bScanCode, BYTE* pbASCIICode, BOOL* pbFlags);
 
 #endif /*__KEYBOARD_H__*/

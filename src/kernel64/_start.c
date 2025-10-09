@@ -2,6 +2,7 @@
 #include "io/keyboard.h"
 #include "io/video.h"
 #include "memory/discriptor.h"
+#include "shell/shell.h"
 #include "types.h"
 #include "util/assembly.h"
 
@@ -29,22 +30,9 @@ void _start(void) {
     sti();
     kPrintln("Kernel64 initialized.");
     kClear(5);
-    kPrintln(" ");
+    kPrintln("");
 
-    while (1) {
-        KEYDATA stData;
-        if (kGetKeyFromKeyQueue(&stData) == FALSE) {
-            continue;
-        }
-
-        if (stData.bFlags & KEY_FLAGS_DOWN) {
-            char key[2] = {
-                stData.bASCIICode,
-                0,
-            };
-            kPrint(key);
-        }
-    }
+    kStartConsoleShell();
 }
 
 void _initMemory(void) {

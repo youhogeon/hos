@@ -1,5 +1,6 @@
 #include "video.h"
 #include "../util/assembly.h"
+#include <stdarg.h>
 
 static WORD gStartAddr = 0;
 static int gScrollCount = 0;
@@ -42,7 +43,7 @@ static inline void _clearBottomLine(void) {
     for (int x = 0; x < VGA_COLS; x++) {
         WORD p = WRAP(base + x);
         vram[p].bCharactor = ' ';
-        vram[p].bAttribute = DEFAULT_ATTR;
+        vram[p].bAttribute = VGA_ATTR_DEFAULT;
     }
 }
 
@@ -111,7 +112,7 @@ static void _putChar(WORD* pCursorAbs, char ch, BYTE attr) {
 }
 
 // API
-int kPrint(const char* str) { return kPrintColor(str, DEFAULT_ATTR); }
+int kPrint(const char* str) { return kPrintColor(str, VGA_ATTR_DEFAULT); }
 
 int kPrintColor(const char* str, BYTE attr) {
     WORD pos = _readCursorPos();
@@ -122,11 +123,31 @@ int kPrintColor(const char* str, BYTE attr) {
     return i;
 }
 
-void kPrintErr(const char* str) { kPrintColor(str, CONSOLE_BACKGROUND_RED | CONSOLE_FOREGROUND_BRIGHTWHITE); }
+int kPrintf(const char* pcFormatString, ...) {
+    va_list ap;
+    char pcBuffer[1024];
+    int i;
 
-void kPrintln(const char* str) { kPrintlnColor(str, DEFAULT_ATTR); }
+    va_start(ap, pcFormatString);
+
+    i = kVSPrintf(pcBuffer, pcFormatString, ap);
+    va_end(ap);
+
+    kPrint(pcBuffer);
+
+    return i;
+}
+
+void kPrintErr(const char* str) { kPrintColor(str, VGA_ATTR_ERROR); }
+
+void kPrintln(const char* str) { kPrintlnColor(str, VGA_ATTR_DEFAULT); }
 
 void kPrintlnColor(const char* str, BYTE attr) {
+    if (str[0] == 0) {
+        kPrint("\n");
+        return;
+    }
+
     WORD pos = _readCursorPos();
     for (int i = 0; str[i] != 0; i++) {
         _putChar(&pos, str[i], attr);
@@ -136,6 +157,19 @@ void kPrintlnColor(const char* str, BYTE attr) {
     WORD col = _visualCol(pos = _readCursorPos());
     if (col != 0)
         _putChar(&pos, '\n', attr);
+}
+
+void kPrintAt(int x, int y, const char* str) {
+    if (x < 0 || x >= VGA_COLS || y < 0 || y >= VGA_ROWS)
+        return;
+
+    WORD pos = WRAP(gStartAddr + y * VGA_COLS + x);
+    for (int i = 0; str[i] != 0; i++) {
+        volatile CHARACTER* vram = VGA_MEM;
+        WORD p = WRAP(pos + i);
+        vram[p].bCharactor = str[i];
+        vram[p].bAttribute = VGA_ATTR_DEFAULT;
+    }
 }
 
 void kClear(int clearStart) {
@@ -151,7 +185,7 @@ void kClear(int clearStart) {
         for (int x = 0; x < VGA_COLS; x++) {
             WORD p = WRAP(base + x);
             vram[p].bCharactor = ' ';
-            vram[p].bAttribute = DEFAULT_ATTR;
+            vram[p].bAttribute = VGA_ATTR_DEFAULT;
         }
     }
 
@@ -159,4 +193,16 @@ void kClear(int clearStart) {
     _setCursorPos(cursor);
 
     gScrollCount = 0;
+}
+
+void kClearChar() {
+    WORD pos = _readCursorPos();
+    if (pos == 0)
+        return;
+
+    volatile CHARACTER* vram = VGA_MEM;
+    pos = WRAP(pos - 1);
+    vram[pos].bCharactor = ' ';
+    vram[pos].bAttribute = VGA_ATTR_DEFAULT;
+    _setCursorPos(pos);
 }
