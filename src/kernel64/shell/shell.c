@@ -29,7 +29,7 @@ static void kEcho(PARAMETER_LIST* pstList) {
     }
 }
 
-void kShowTotalRAMSize(PARAMETER_LIST* pstList) { kPrintf("Total RAM Size = %d MB\n", kMemSize()); }
+void kShowTotalRAMSize(PARAMETER_LIST* pstList) { kPrintf("Total RAM size: %d MB\n", kMemSize()); }
 
 void kWaitUsingPIT(PARAMETER_LIST* pstList) {
     char vcParameter[100];
@@ -44,7 +44,7 @@ void kWaitUsingPIT(PARAMETER_LIST* pstList) {
     }
 
     long lMillisecond = kAToI(vcParameter, 10);
-    kPrintf("%d ms Sleep...\n", lMillisecond);
+    kPrintf("%d ms sleep...\n", lMillisecond);
 
     cli();
     for (i = 0; i < lMillisecond / 25; i++) {
@@ -53,7 +53,7 @@ void kWaitUsingPIT(PARAMETER_LIST* pstList) {
     kWaitUsingDirectPIT(MSTOCOUNT(lMillisecond % 25));
     sti();
 
-    kPrintf("%d ms Sleep Complete\n", lMillisecond);
+    kPrintf("%d ms sleep complete\n", lMillisecond);
     kInitPIT(MSTOCOUNT(1), TRUE);
 }
 
@@ -74,7 +74,7 @@ void kMeasureProcessorSpeed(PARAMETER_LIST* pstList) {
     kInitPIT(MSTOCOUNT(1), TRUE);
     sti();
 
-    kPrintf("\nCPU Speed = %d MHz\n", qwTotalTSC / 10 / 1000 / 1000);
+    kPrintf("\nCPU speed: %d MHz\n", qwTotalTSC / 10 / 1000 / 1000);
 }
 
 void kShowDateAndTime(PARAMETER_LIST* pstList) {
@@ -92,13 +92,13 @@ void kShowDateAndTime(PARAMETER_LIST* pstList) {
 
 SHELL_COMMAND_ENTRY gs_vstCommandTable[] = {
     {"help", "Show all commands", kHelp},
-    {"clear", "Clear Screen", kCls},
+    {"clear", "Clear screen", kCls},
     {"echo", "Echo arguments", kEcho},
     {"reboot", "Reboot system", kReboot},
     {"memory", "Show total RAM size", kShowTotalRAMSize},
-    {"cpuspeed", "Measure Processor Speed", kMeasureProcessorSpeed},
-    {"wait", "Wait ms Using PIT. [Usage] wait <ms>", kWaitUsingPIT},
-    {"date", "Show Date And Time", kShowDateAndTime},
+    {"cpuspeed", "Measure processor speed", kMeasureProcessorSpeed},
+    {"wait", "Wait ms using PIT. [Usage] wait <ms>", kWaitUsingPIT},
+    {"datetime", "Show date and time", kShowDateAndTime},
 };
 
 static void kHelp(PARAMETER_LIST* pstList) {

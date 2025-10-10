@@ -212,6 +212,6 @@ BOOT_DRIVE: db 0
 ; Bootloader Signature
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-times 497 - ($ - $$) db 0x00
-VERSION: db 'v00000000.00', 0 ; 12 bytes (will be replaced on build)
+times 495 - ($ - $$) db 0x00
+VERSION: db 'v00000000.00', 0x0D, 0x0A, 0 ; 12 bytes (will be replaced on build)
 dw 0xAA55

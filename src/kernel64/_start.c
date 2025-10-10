@@ -21,11 +21,11 @@ void _start(void) {
     kMaskPICInterrupt(0);
 
     if (kInitKeyboard() == FALSE) {
-        kPrintErr("Keyboard initialization failed.");
+        kPrintErr("PIC initialization failed.");
         return;
     }
 
-    kPrintln("Keyboard initialized.");
+    kPrintln("PIC initialized.");
 
     // 마무리
     sti();

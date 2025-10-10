@@ -4,7 +4,7 @@
     {
       "label": "make",
       "type": "shell",
-      "command": "HOS_VERSION=$(date +v%Y%m%d.%S) make clean disk.img",
+      "command": "HOS_VERSION=$(date +dev%y%m%d.%S) make clean disk.img",
       "group": {
         "kind": "build",
         "isDefault": true
