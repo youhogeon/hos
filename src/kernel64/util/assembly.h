@@ -16,9 +16,6 @@ static inline void loadTR(WORD tr) { __asm__ volatile("ltr %w0" ::"r"(tr)); }
 static inline void sti(void) { __asm__ volatile("sti"); }
 static inline void cli(void) { __asm__ volatile("cli"); }
 
-void reloadCS(WORD selector);
-void reloadDS(WORD selector);
-
 static inline QWORD kReadRFLAGS(void) {
     QWORD qwRFLAGS;
 
@@ -47,3 +44,7 @@ static BOOL kSetInterruptFlag(BOOL bEnableInterrupt) {
 
     return FALSE;
 }
+
+void reloadCS(WORD selector);
+void reloadDS(WORD selector);
+QWORD kReadTSC(void);

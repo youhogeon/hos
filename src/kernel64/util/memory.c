@@ -31,3 +31,30 @@ int kMemCmp(const void* pvDestination, const void* pvSource, int iSize) {
 
     return 0;
 }
+
+static gs_qwTotalRAMMBSize = 0;
+
+int kMemSize() {
+    if (gs_qwTotalRAMMBSize != 0) {
+        return gs_qwTotalRAMMBSize;
+    }
+
+    // 64Mbyte(0x4000000)부터 4Mbyte단위로 검사 시작
+    DWORD* pdwCurrentAddress = (DWORD*)0x4000000;
+    while (1) {
+        DWORD dwPreviousValue = *pdwCurrentAddress;
+
+        *pdwCurrentAddress = 0x12345678;
+        if (*pdwCurrentAddress != 0x12345678) {
+            break;
+        }
+
+        *pdwCurrentAddress = dwPreviousValue;
+
+        pdwCurrentAddress += 0x100000;
+    }
+
+    gs_qwTotalRAMMBSize = (QWORD)pdwCurrentAddress / 0x100000;
+
+    return gs_qwTotalRAMMBSize;
+}

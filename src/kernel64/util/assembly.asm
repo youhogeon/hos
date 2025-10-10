@@ -2,7 +2,7 @@
 
 SECTION .text
 
-global reloadCS, reloadDS, setKernelStack
+global reloadCS, reloadDS, kReadTSC
 
 reloadCS:
 	pop rax
@@ -20,3 +20,14 @@ reloadDS:
 	mov ss, ax
 
 	ret
+
+kReadTSC:
+    push rdx
+    
+    rdtsc
+    
+    shl rdx, 32
+    or rax, rdx
+    
+    pop rdx
+    ret

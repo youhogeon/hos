@@ -5,6 +5,7 @@
 #include "shell/shell.h"
 #include "types.h"
 #include "util/assembly.h"
+#include "util/memory.h"
 
 void _initMemory(void);
 
@@ -36,6 +37,8 @@ void _start(void) {
 }
 
 void _initMemory(void) {
+    kMemSize();
+
     kInitGDTAndTSS();
     kInitIDT();
 

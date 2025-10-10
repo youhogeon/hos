@@ -1,7 +1,10 @@
 
 #include "shell.h"
+#include "../io/PIT.h"
+#include "../io/RTC.h"
 #include "../io/keyboard.h"
 #include "../io/video.h"
+#include "../util/assembly.h"
 #include "../util/memory.h"
 #include "../util/string.h"
 
@@ -24,7 +27,67 @@ static void kEcho(PARAMETER_LIST* pstList) {
         }
         kPrintln(pcParameter);
     }
-    kPrintf("\n");
+}
+
+void kShowTotalRAMSize(PARAMETER_LIST* pstList) { kPrintf("Total RAM Size = %d MB\n", kMemSize()); }
+
+void kWaitUsingPIT(PARAMETER_LIST* pstList) {
+    char vcParameter[100];
+    int iLength;
+    ;
+    int i;
+
+    // 파라미터 초기화
+    if (kGetNextParameter(pstList, vcParameter) == 0) {
+        kPrintln("[Usage] wait <ms>");
+        return;
+    }
+
+    long lMillisecond = kAToI(vcParameter, 10);
+    kPrintf("%d ms Sleep...\n", lMillisecond);
+
+    cli();
+    for (i = 0; i < lMillisecond / 25; i++) {
+        kWaitUsingDirectPIT(MSTOCOUNT(25));
+    }
+    kWaitUsingDirectPIT(MSTOCOUNT(lMillisecond % 25));
+    sti();
+
+    kPrintf("%d ms Sleep Complete\n", lMillisecond);
+    kInitPIT(MSTOCOUNT(1), TRUE);
+}
+
+void kMeasureProcessorSpeed(PARAMETER_LIST* pstList) {
+    int i;
+    QWORD qwLastTSC, qwTotalTSC = 0;
+
+    kPrintf("Measuring.");
+
+    cli();
+    for (i = 0; i < 200; i++) {
+        qwLastTSC = kReadTSC();
+        kWaitUsingDirectPIT(MSTOCOUNT(50));
+        qwTotalTSC += kReadTSC() - qwLastTSC;
+
+        kPrintf(".");
+    }
+    kInitPIT(MSTOCOUNT(1), TRUE);
+    sti();
+
+    kPrintf("\nCPU Speed = %d MHz\n", qwTotalTSC / 10 / 1000 / 1000);
+}
+
+void kShowDateAndTime(PARAMETER_LIST* pstList) {
+    BYTE bSecond, bMinute, bHour;
+    BYTE bDayOfWeek, bDayOfMonth, bMonth;
+    WORD wYear;
+
+    // RTC 컨트롤러에서 시간 및 일자를 읽음
+    kReadRTCTime(&bHour, &bMinute, &bSecond);
+    kReadRTCDate(&wYear, &bMonth, &bDayOfMonth, &bDayOfWeek);
+
+    kPrintf("%d/%d/%d (%s) ", wYear, bMonth, bDayOfMonth, kConvertDayOfWeekToString(bDayOfWeek));
+    kPrintf("%d:%d:%d\n", bHour, bMinute, bSecond);
 }
 
 SHELL_COMMAND_ENTRY gs_vstCommandTable[] = {
@@ -32,6 +95,10 @@ SHELL_COMMAND_ENTRY gs_vstCommandTable[] = {
     {"clear", "Clear Screen", kCls},
     {"echo", "Echo arguments", kEcho},
     {"reboot", "Reboot system", kReboot},
+    {"memory", "Show total RAM size", kShowTotalRAMSize},
+    {"cpuspeed", "Measure Processor Speed", kMeasureProcessorSpeed},
+    {"wait", "Wait ms Using PIT. [Usage] wait <ms>", kWaitUsingPIT},
+    {"date", "Show Date And Time", kShowDateAndTime},
 };
 
 static void kHelp(PARAMETER_LIST* pstList) {

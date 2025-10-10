@@ -1,5 +1,6 @@
 #include "video.h"
 #include "../util/assembly.h"
+#include "../util/string.h"
 #include <stdarg.h>
 
 static WORD gStartAddr = 0;
