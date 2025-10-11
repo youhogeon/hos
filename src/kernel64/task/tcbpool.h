@@ -34,5 +34,7 @@ typedef struct kTCBPoolManagerStruct {
 void kInitTCBPool(void);
 TCB* kAllocateTCB(void);
 void kFreeTCB(QWORD qwID);
+TCB* kGetTCBInTCBPool(int iOffset);
+BOOL kIsTaskExist(QWORD qwID);
 
 #endif /*__TCBPOOL_H__*/

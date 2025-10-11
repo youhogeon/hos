@@ -19,6 +19,7 @@ void _start(void) {
 
     // Init scheduler
     kInitScheduler();
+    kCreateTask(TASK_FLAGS_LOWEST | TASK_FLAGS_IDLE, (QWORD)kIdleTask);
     kPrintln("Scheduler initialized.");
 
     // Init PIC, keyboard

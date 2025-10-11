@@ -11,4 +11,3 @@ BEGIN:
     mov rbp, 0x6FFFF8
 
     call _start
-    jmp $

@@ -81,6 +81,8 @@ static void kMeasureProcessorSpeed(PARAMETER_LIST* pstList) {
     kPrintf("\nCPU speed: %d MHz\n", qwTotalTSC / 10 / 1000 / 1000);
 }
 
+static void kCPULoad(PARAMETER_LIST* pstList) { kPrintf("Processor Load: %d%%\n", kGetProcessorLoad()); }
+
 static void kShowDateAndTime(PARAMETER_LIST* pstList) {
     BYTE bSecond, bMinute, bHour;
     BYTE bDayOfWeek, bDayOfMonth, bMonth;
@@ -103,7 +105,6 @@ static void kTestTask1(void) {
     pstRunningTask = kGetRunningTask();
     iMargin = (pstRunningTask->stLink.qwID & 0xFFFFFFFF) % 10;
 
-    // 화면 네 귀퉁이를 돌면서 문자 출력
     while (1) {
         switch (i) {
         case 0:
@@ -139,7 +140,6 @@ static void kTestTask1(void) {
         kPrintAt(iX, iY, d);
         bData++;
 
-        // 다른 태스크로 전환
         kSchedule();
     }
 }
@@ -157,7 +157,6 @@ static void kTestTask2(void) {
 
         i++;
 
-        // 다른 태스크로 전환
         kSchedule();
     }
 }
@@ -178,7 +177,7 @@ static void kCreateTestTask(PARAMETER_LIST* pstList) {
     switch (kAToI(vcType, 10)) {
     case 1:
         for (int i = 0; i < count; i++) {
-            if (kCreateTask(0, (QWORD)kTestTask1) == NULL) {
+            if (kCreateTask(TASK_FLAGS_LOW, (QWORD)kTestTask1) == NULL) {
                 break;
             }
         }
@@ -188,7 +187,7 @@ static void kCreateTestTask(PARAMETER_LIST* pstList) {
 
     case 2:
         for (int i = 0; i < count; i++) {
-            if (kCreateTask(0, (QWORD)kTestTask2) == NULL) {
+            if (kCreateTask(TASK_FLAGS_LOW, (QWORD)kTestTask2) == NULL) {
                 break;
             }
         }
@@ -200,6 +199,91 @@ static void kCreateTestTask(PARAMETER_LIST* pstList) {
     }
 }
 
+static void kChangeTaskPriority(PARAMETER_LIST* pstList) {
+    char vcID[30];
+    char vcPriority[30];
+    QWORD qwID;
+
+    kGetNextParameter(pstList, vcID);
+    kGetNextParameter(pstList, vcPriority);
+
+    if (kMemCmp(vcID, "0x", 2) == 0) {
+        qwID = kAToI(vcID + 2, 16);
+    } else {
+        qwID = kAToI(vcID, 10);
+    }
+
+    if (qwID == 0) {
+        kPrintln("[Usage] changepriority <ID> <PRIORITY:0,1,2,3,4)>");
+        return;
+    }
+
+    BYTE bPriority = kAToI(vcPriority, 10);
+
+    kPrintf("Change priority of task [0x%q] had changed to [%d]: ", qwID, bPriority);
+
+    if (kChangePriority(qwID, bPriority) == TRUE) {
+        kPrintlnColor("Success", VGA_ATTR_FOREGROUND_BRIGHTGREEN);
+    } else {
+        kPrintlnColor("Fail", VGA_ATTR_FOREGROUND_BRIGHTRED);
+    }
+}
+
+static void kShowTaskList(PARAMETER_LIST* pstList) {
+    int iCount = 0;
+
+    kPrintf("Total Tasks: %d\n\n", kGetTaskCount());
+    for (int i = 0; i < TASK_MAXCOUNT; i++) {
+        TCB* pstTCB = kGetTCBInTCBPool(i);
+        if ((pstTCB->stLink.qwID >> 32) == 0) {
+            continue;
+        }
+
+        if ((iCount != 0) && ((iCount % 10) == 0)) {
+            kPrintf("Press any key to continue... ('q' to quit) : ");
+
+            if (kGetCh() == 'q') {
+                kPrintf("\n");
+                break;
+            }
+
+            kPrintf("\n");
+        }
+
+        kPrintf("[%d] Task ID[0x%Q], Priority[%d], Flags[0x%Q]\n",
+                1 + iCount++,
+                pstTCB->stLink.qwID,
+                GETPRIORITY(pstTCB->qwFlags),
+                pstTCB->qwFlags);
+    }
+}
+
+static void kKillTask(PARAMETER_LIST* pstList) {
+    char vcID[30];
+    QWORD qwID;
+
+    kGetNextParameter(pstList, vcID);
+
+    // 태스크를 종료
+    if (kMemCmp(vcID, "0x", 2) == 0) {
+        qwID = kAToI(vcID + 2, 16);
+    } else {
+        qwID = kAToI(vcID, 10);
+    }
+
+    if (qwID == 0) {
+        kPrintln("[Usage] killtask <ID>");
+        return;
+    }
+
+    kPrintf("Kill Task [0x%q]: ", qwID);
+    if (kEndTask(qwID) == TRUE) {
+        kPrintlnColor("Success", VGA_ATTR_FOREGROUND_BRIGHTGREEN);
+    } else {
+        kPrintlnColor("Fail", VGA_ATTR_FOREGROUND_BRIGHTRED);
+    }
+}
+
 SHELL_COMMAND_ENTRY gs_vstCommandTable[] = {
     {"help", "Show all commands", kHelp},
     {"clear", "Clear screen", kCls},
@@ -207,9 +291,13 @@ SHELL_COMMAND_ENTRY gs_vstCommandTable[] = {
     {"reboot", "Reboot system", kReboot_},
     {"memory", "Show total RAM size", kShowTotalRAMSize},
     {"cpuspeed", "Measure processor speed", kMeasureProcessorSpeed},
-    {"wait", "Wait ms using PIT. [Usage] wait <ms>", kWaitUsingPIT},
+    {"cpuload", "Show processor load", kCPULoad},
+    {"wait", "Wait ms using PIT.", kWaitUsingPIT},
     {"datetime", "Show date and time", kShowDateAndTime},
-    {"createtask", "(test) Create Task", kCreateTestTask},
+    {"createtask", "Create task", kCreateTestTask},
+    {"changepriority", "Change task priority", kChangeTaskPriority},
+    {"tasklist", "Show task list", kShowTaskList},
+    {"killtask", "Kill task", kKillTask},
 };
 
 static void kHelp(PARAMETER_LIST* pstList) {

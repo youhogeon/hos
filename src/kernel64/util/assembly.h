@@ -48,3 +48,4 @@ static BOOL kSetInterruptFlag(BOOL bEnableInterrupt) {
 void reloadCS(WORD selector);
 void reloadDS(WORD selector);
 QWORD kReadTSC(void);
+void kHlt(void);

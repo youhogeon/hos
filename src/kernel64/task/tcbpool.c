@@ -58,12 +58,34 @@ TCB* kAllocateTCB(void) {
  * TCB를 해제함
  */
 void kFreeTCB(QWORD qwID) {
-    // 태스크 ID의 하위 32비트가 인덱스 역할을 함
-    int i = qwID & 0xFFFFFFFF;
+    int i = GETTCBOFFSET(qwID);
 
     // TCB를 초기화하고 ID 설정
     kMemSet(&(gs_stTCBPoolManager.pstStartAddress[i].stContext), 0, sizeof(CONTEXT));
     gs_stTCBPoolManager.pstStartAddress[i].stLink.qwID = i;
 
     gs_stTCBPoolManager.iUseCount--;
+}
+
+/**
+ * TCB 풀에서 해당 오프셋의 TCB를 반환
+ */
+TCB* kGetTCBInTCBPool(int iOffset) {
+    if ((iOffset < -1) && (iOffset > TASK_MAXCOUNT)) {
+        return NULL;
+    }
+
+    return &(gs_stTCBPoolManager.pstStartAddress[iOffset]);
+}
+
+/**
+ * 태스크가 존재하는지 여부를 반환
+ */
+BOOL kIsTaskExist(QWORD qwID) {
+    TCB* pstTCB = kGetTCBInTCBPool(GETTCBOFFSET(qwID));
+    // TCB가 없거나 ID가 일치하지 않으면 존재하지 않는 것임
+    if ((pstTCB == NULL) || (pstTCB->stLink.qwID != qwID)) {
+        return FALSE;
+    }
+    return TRUE;
 }

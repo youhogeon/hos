@@ -46,7 +46,13 @@ static BOOL waitACK(void) {
 BOOL kInitKeyboard(void) {
     kInitQueue(&gs_stKeyQueue, gs_vstKeyQueueBuffer, KEY_MAXQUEUECOUNT, sizeof(KEYDATA));
 
-    return kActivateKeyboard();
+    if (!kActivateKeyboard()) {
+        return FALSE;
+    }
+
+    kChangeKeyboardLED(FALSE, FALSE, FALSE);
+
+    return TRUE;
 }
 
 BOOL kActivateKeyboard(void) {

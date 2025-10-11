@@ -2,7 +2,7 @@
 
 SECTION .text
 
-global reloadCS, reloadDS, kReadTSC
+global reloadCS, reloadDS, kReadTSC, kHlt
 
 reloadCS:
 	pop rax
@@ -30,4 +30,9 @@ kReadTSC:
     or rax, rdx
     
     pop rdx
+    ret
+
+kHlt:
+    hlt
+    hlt
     ret

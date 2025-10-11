@@ -34,6 +34,10 @@
 #define TASK_RSPOFFSET 22
 #define TASK_SSOFFSET 23
 
+#define GETPRIORITY(x) ((x) & 0xFF)
+#define SETPRIORITY(x, priority) ((x) = ((x) & 0xFFFFFFFFFFFFFF00) | (priority))
+#define GETTCBOFFSET(x) ((x) & 0xFFFFFFFF)
+
 #pragma pack(push, 1)
 
 typedef struct kContextStruct {
