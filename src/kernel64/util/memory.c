@@ -32,7 +32,7 @@ int kMemCmp(const void* pvDestination, const void* pvSource, int iSize) {
     return 0;
 }
 
-static gs_qwTotalRAMMBSize = 0;
+static int gs_qwTotalRAMMBSize = 0;
 
 int kMemSize() {
     if (gs_qwTotalRAMMBSize != 0) {

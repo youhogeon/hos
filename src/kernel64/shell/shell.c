@@ -4,6 +4,8 @@
 #include "../io/RTC.h"
 #include "../io/keyboard.h"
 #include "../io/video.h"
+#include "../task/switchcontext.h"
+#include "../task/task.h"
 #include "../util/assembly.h"
 #include "../util/memory.h"
 #include "../util/string.h"
@@ -29,9 +31,11 @@ static void kEcho(PARAMETER_LIST* pstList) {
     }
 }
 
-void kShowTotalRAMSize(PARAMETER_LIST* pstList) { kPrintf("Total RAM size: %d MB\n", kMemSize()); }
+static void kReboot_(PARAMETER_LIST* pstList) { kReboot(); }
 
-void kWaitUsingPIT(PARAMETER_LIST* pstList) {
+static void kShowTotalRAMSize(PARAMETER_LIST* pstList) { kPrintf("Total RAM size: %d MB\n", kMemSize()); }
+
+static void kWaitUsingPIT(PARAMETER_LIST* pstList) {
     char vcParameter[100];
     int iLength;
     ;
@@ -57,7 +61,7 @@ void kWaitUsingPIT(PARAMETER_LIST* pstList) {
     kInitPIT(MSTOCOUNT(1), TRUE);
 }
 
-void kMeasureProcessorSpeed(PARAMETER_LIST* pstList) {
+static void kMeasureProcessorSpeed(PARAMETER_LIST* pstList) {
     int i;
     QWORD qwLastTSC, qwTotalTSC = 0;
 
@@ -77,7 +81,7 @@ void kMeasureProcessorSpeed(PARAMETER_LIST* pstList) {
     kPrintf("\nCPU speed: %d MHz\n", qwTotalTSC / 10 / 1000 / 1000);
 }
 
-void kShowDateAndTime(PARAMETER_LIST* pstList) {
+static void kShowDateAndTime(PARAMETER_LIST* pstList) {
     BYTE bSecond, bMinute, bHour;
     BYTE bDayOfWeek, bDayOfMonth, bMonth;
     WORD wYear;
@@ -90,15 +94,59 @@ void kShowDateAndTime(PARAMETER_LIST* pstList) {
     kPrintf("%d:%d:%d\n", bHour, bMinute, bSecond);
 }
 
+static TCB gs_vstTask[2] = {
+    0,
+};
+static QWORD gs_vstStack[1024] = {
+    0,
+};
+
+void kTestTask(void) {
+    int i = 0;
+
+    while (1) {
+        // 메시지를 출력하고 키 입력을 대기
+        kPrintf("[%d] This message is from kTestTask. Press any key to switch "
+                "kConsoleShell~!!\n",
+                i++);
+        kGetCh();
+
+        // 위에서 키가 입력되면 태스크를 전환
+        kSwitchContext(&(gs_vstTask[1].stContext), &(gs_vstTask[0].stContext));
+    }
+}
+
+void kCreateTestTask(PARAMETER_LIST* pstList) {
+    KEYDATA stData;
+    int i = 0;
+
+    // 태스크 설정
+    kSetUpTask(&(gs_vstTask[1]), 1, 0, (QWORD)kTestTask, &(gs_vstStack), sizeof(gs_vstStack));
+
+    // 'q' 키가 입력되지 않을 때까지 수행
+    while (1) {
+        // 메시지를 출력하고 키 입력을 대기
+        kPrintf("[%d] This message is from kConsoleShell. Press any key to "
+                "switch TestTask~!!\n",
+                i++);
+        if (kGetCh() == 'q') {
+            break;
+        }
+        // 위에서 키가 입력되면 태스크를 전환
+        kSwitchContext(&(gs_vstTask[0].stContext), &(gs_vstTask[1].stContext));
+    }
+}
+
 SHELL_COMMAND_ENTRY gs_vstCommandTable[] = {
     {"help", "Show all commands", kHelp},
     {"clear", "Clear screen", kCls},
     {"echo", "Echo arguments", kEcho},
-    {"reboot", "Reboot system", kReboot},
+    {"reboot", "Reboot system", kReboot_},
     {"memory", "Show total RAM size", kShowTotalRAMSize},
     {"cpuspeed", "Measure processor speed", kMeasureProcessorSpeed},
     {"wait", "Wait ms using PIT. [Usage] wait <ms>", kWaitUsingPIT},
     {"datetime", "Show date and time", kShowDateAndTime},
+    {"testtask", "Create test task", kCreateTestTask},
 };
 
 static void kHelp(PARAMETER_LIST* pstList) {

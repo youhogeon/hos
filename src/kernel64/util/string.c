@@ -1,4 +1,5 @@
 #include "string.h"
+#include "memory.h"
 
 int kStrLen(const char* pcBuffer) {
     int i;
