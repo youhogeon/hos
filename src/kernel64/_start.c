@@ -3,6 +3,7 @@
 #include "io/video.h"
 #include "memory/discriptor.h"
 #include "shell/shell.h"
+#include "task/scheduler.h"
 #include "types.h"
 #include "util/assembly.h"
 #include "util/memory.h"
@@ -15,6 +16,10 @@ void _start(void) {
     // Init memory
     _initMemory();
     kPrintln("Memory initialized.");
+
+    // Init scheduler
+    kInitScheduler();
+    kPrintln("Scheduler initialized.");
 
     // Init PIC, keyboard
     kInitPIC();

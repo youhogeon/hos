@@ -1,4 +1,5 @@
 #include "keyboard.h"
+#include "../task/scheduler.h"
 #include "../util/assembly.h"
 #include "../util/queue.h"
 
@@ -136,6 +137,7 @@ BYTE kGetCh(void) {
 
     while (1) {
         while (kGetKeyFromKeyQueue(&stData) == FALSE) {
+            kSchedule();
         }
 
         if (stData.bFlags & KEY_FLAGS_DOWN) {

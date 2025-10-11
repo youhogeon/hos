@@ -2,8 +2,7 @@
 #include "../memory/discriptor.h"
 #include "../util/memory.h"
 
-void kSetUpTask(TCB* pstTCB, QWORD qwID, QWORD qwFlags, QWORD qwEntryPointAddress, void* pvStackAddress,
-                QWORD qwStackSize) {
+void kSetUpTask(TCB* pstTCB, QWORD qwFlags, QWORD qwEntryPointAddress, void* pvStackAddress, QWORD qwStackSize) {
     kMemSet(pstTCB->stContext.vqRegister, 0, sizeof(pstTCB->stContext.vqRegister));
 
     // 스택에 관련된 RSP, RBP 레지스터 설정
@@ -23,7 +22,6 @@ void kSetUpTask(TCB* pstTCB, QWORD qwID, QWORD qwFlags, QWORD qwEntryPointAddres
     pstTCB->stContext.vqRegister[TASK_RFLAGSOFFSET] |= 0x0200; // IF 비트 설정 (인터럽트 활성화)
 
     // ID 및 스택, 그리고 플래그 저장
-    pstTCB->qwID = qwID;
     pstTCB->pvStackAddress = pvStackAddress;
     pstTCB->qwStackSize = qwStackSize;
     pstTCB->qwFlags = qwFlags;

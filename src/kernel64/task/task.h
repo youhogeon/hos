@@ -2,6 +2,7 @@
 #define __TASK_H__
 
 #include "../types.h"
+#include "../util/list.h"
 
 // SS, RSP, RFLAGS, CS, RIP + ISR에서 저장하는 19개의 레지스터
 #define TASK_REGISTERCOUNT (5 + 19)
@@ -40,18 +41,20 @@ typedef struct kContextStruct {
 } CONTEXT;
 
 typedef struct kTaskControlBlockStruct {
-    CONTEXT stContext;
+    LISTLINK stLink;
 
-    QWORD qwID;
     QWORD qwFlags;
 
+    // 콘텍스트
+    CONTEXT stContext;
+
+    // 스택의 어드레스와 크기
     void* pvStackAddress;
     QWORD qwStackSize;
 } TCB;
 
 #pragma pack(pop)
 
-void kSetUpTask(TCB* pstTCB, QWORD qwID, QWORD qwFlags, QWORD qwEntryPointAddress, void* pvStackAddress,
-                QWORD qwStackSize);
+void kSetUpTask(TCB* pstTCB, QWORD qwFlags, QWORD qwEntryPointAddress, void* pvStackAddress, QWORD qwStackSize);
 
 #endif /*__TASK_H__*/

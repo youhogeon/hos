@@ -4,7 +4,8 @@
 
 SECTION .text
 
-extern kCommonExceptionHandler, kCommonInterruptHandler, kKeyboardHandler
+extern kCommonExceptionHandler, kCommonInterruptHandler
+extern kTimerHandler, kKeyboardHandler
 
 ; Exception ISR
 global kISR_DivideError, kISR_Debug, kISR_NMI, kISR_BreakPoint, kISR_Overflow
@@ -257,7 +258,7 @@ kISR_Timer:
     K_SAVE_CONTEXT
 
     mov rdi, 32
-    call kCommonInterruptHandler
+    call kTimerHandler
 
     K_RESTORE_CONTEXT
     iretq

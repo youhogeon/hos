@@ -4,8 +4,8 @@
 #include "../io/RTC.h"
 #include "../io/keyboard.h"
 #include "../io/video.h"
-#include "../task/switchcontext.h"
-#include "../task/task.h"
+#include "../task/scheduler.h"
+#include "../task/tcbpool.h"
 #include "../util/assembly.h"
 #include "../util/memory.h"
 #include "../util/string.h"
@@ -94,46 +94,109 @@ static void kShowDateAndTime(PARAMETER_LIST* pstList) {
     kPrintf("%d:%d:%d\n", bHour, bMinute, bSecond);
 }
 
-static TCB gs_vstTask[2] = {
-    0,
-};
-static QWORD gs_vstStack[1024] = {
-    0,
-};
+static void kTestTask1(void) {
+    BYTE bData;
+    int i = 0, iX = 0, iY = 0, iMargin;
+    TCB* pstRunningTask;
 
-void kTestTask(void) {
-    int i = 0;
+    // 자신의 ID를 얻어서 화면 오프셋으로 사용
+    pstRunningTask = kGetRunningTask();
+    iMargin = (pstRunningTask->stLink.qwID & 0xFFFFFFFF) % 10;
 
+    // 화면 네 귀퉁이를 돌면서 문자 출력
     while (1) {
-        // 메시지를 출력하고 키 입력을 대기
-        kPrintf("[%d] This message is from kTestTask. Press any key to switch "
-                "kConsoleShell~!!\n",
-                i++);
-        kGetCh();
+        switch (i) {
+        case 0:
+            iX++;
+            if (iX >= (VGA_COLS - iMargin)) {
+                i = 1;
+            }
+            break;
 
-        // 위에서 키가 입력되면 태스크를 전환
-        kSwitchContext(&(gs_vstTask[1].stContext), &(gs_vstTask[0].stContext));
+        case 1:
+            iY++;
+            if (iY >= (VGA_ROWS - iMargin)) {
+                i = 2;
+            }
+            break;
+
+        case 2:
+            iX--;
+            if (iX < iMargin) {
+                i = 3;
+            }
+            break;
+
+        case 3:
+            iY--;
+            if (iY < iMargin) {
+                i = 0;
+            }
+            break;
+        }
+
+        char d[2] = {bData, 0};
+        kPrintAt(iX, iY, d);
+        bData++;
+
+        // 다른 태스크로 전환
+        kSchedule();
     }
 }
 
-void kCreateTestTask(PARAMETER_LIST* pstList) {
-    KEYDATA stData;
+static void kTestTask2(void) {
+    char vcData[4] = {'-', '\\', '|', '/'};
     int i = 0;
 
-    // 태스크 설정
-    kSetUpTask(&(gs_vstTask[1]), 1, 0, (QWORD)kTestTask, &(gs_vstStack), sizeof(gs_vstStack));
+    TCB* pstRunningTask = kGetRunningTask();
+    int id = (pstRunningTask->stLink.qwID & 0xFFFFFFFF);
 
-    // 'q' 키가 입력되지 않을 때까지 수행
     while (1) {
-        // 메시지를 출력하고 키 입력을 대기
-        kPrintf("[%d] This message is from kConsoleShell. Press any key to "
-                "switch TestTask~!!\n",
-                i++);
-        if (kGetCh() == 'q') {
-            break;
+        char d[2] = {vcData[i % 4], 0};
+        kPrintAt(id % VGA_COLS, (id / VGA_COLS) % VGA_ROWS, d);
+
+        i++;
+
+        // 다른 태스크로 전환
+        kSchedule();
+    }
+}
+
+static void kCreateTestTask(PARAMETER_LIST* pstList) {
+    char vcType[30];
+    char vcCount[30];
+
+    kGetNextParameter(pstList, vcType);
+    kGetNextParameter(pstList, vcCount);
+
+    int count = kAToI(vcCount, 10);
+    if (count <= 0) {
+        kPrintln("[Usage] createtask <type:1,2> <count>");
+        return;
+    }
+
+    switch (kAToI(vcType, 10)) {
+    case 1:
+        for (int i = 0; i < count; i++) {
+            if (kCreateTask(0, (QWORD)kTestTask1) == NULL) {
+                break;
+            }
         }
-        // 위에서 키가 입력되면 태스크를 전환
-        kSwitchContext(&(gs_vstTask[0].stContext), &(gs_vstTask[1].stContext));
+
+        kPrintf("Task1 Created\n");
+        break;
+
+    case 2:
+        for (int i = 0; i < count; i++) {
+            if (kCreateTask(0, (QWORD)kTestTask2) == NULL) {
+                break;
+            }
+        }
+
+        kPrintf("Task2 Created\n");
+        break;
+    default:
+        kPrintln("[Usage] createtask <type:1,2> <count>");
     }
 }
 
@@ -146,7 +209,7 @@ SHELL_COMMAND_ENTRY gs_vstCommandTable[] = {
     {"cpuspeed", "Measure processor speed", kMeasureProcessorSpeed},
     {"wait", "Wait ms using PIT. [Usage] wait <ms>", kWaitUsingPIT},
     {"datetime", "Show date and time", kShowDateAndTime},
-    {"testtask", "Create test task", kCreateTestTask},
+    {"createtask", "(test) Create Task", kCreateTestTask},
 };
 
 static void kHelp(PARAMETER_LIST* pstList) {
