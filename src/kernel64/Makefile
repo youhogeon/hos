@@ -1,5 +1,5 @@
 NASM64 = nasm -f elf64
-GCC64 = gcc -c -m64 -ffreestanding
+GCC64 = gcc -c -m64 -ffreestanding -Werror
 LD64 = ld -melf_x86_64 -T ../ldscripts/elf_x86_64.x -nostdlib -e _start -Ttext 0x200000
 OBJCOPY64 = objcopy -j .text -j .data -j .rodata -j .bss -S -O binary
 
