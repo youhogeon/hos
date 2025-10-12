@@ -2,6 +2,7 @@
 #include "../task/scheduler.h"
 #include "../util/assembly.h"
 #include "../util/queue.h"
+#include "../util/sync.h"
 
 static QUEUE gs_stKeyQueue;
 static KEYDATA gs_vstKeyQueueBuffer[KEY_MAXQUEUECOUNT];
@@ -110,14 +111,13 @@ BOOL kChangeKeyboardLED(BOOL bCapsLockOn, BOOL bNumLockOn, BOOL bScrollLockOn) {
 BOOL kConvertScanCodeAndPutQueue(BYTE bScanCode) {
     KEYDATA stData;
     BOOL bResult = FALSE;
-    BOOL bPreviousInterrupt;
 
     stData.bScanCode = bScanCode;
 
     if (kConvertScanCodeToASCIICode(bScanCode, &(stData.bASCIICode), &(stData.bFlags)) == TRUE) {
-        bPreviousInterrupt = kSetInterruptFlag(FALSE);
+        BOOL bPreviousFlag = kLockForSystemData();
         bResult = kPutQueue(&gs_stKeyQueue, &stData);
-        kSetInterruptFlag(bPreviousInterrupt);
+        kUnlockForSystemData(bPreviousFlag);
     }
 
     return bResult;
@@ -125,15 +125,14 @@ BOOL kConvertScanCodeAndPutQueue(BYTE bScanCode) {
 
 BOOL kGetKeyFromKeyQueue(KEYDATA* pstData) {
     BOOL bResult;
-    BOOL bPreviousInterrupt;
 
     if (kIsQueueEmpty(&gs_stKeyQueue) == TRUE) {
         return FALSE;
     }
 
-    bPreviousInterrupt = kSetInterruptFlag(FALSE);
+    BOOL bPreviousFlag = kLockForSystemData();
     bResult = kGetQueue(&gs_stKeyQueue, pstData);
-    kSetInterruptFlag(bPreviousInterrupt);
+    kUnlockForSystemData(bPreviousFlag);
 
     return bResult;
 }

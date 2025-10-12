@@ -49,3 +49,4 @@ void reloadCS(WORD selector);
 void reloadDS(WORD selector);
 QWORD kReadTSC(void);
 void kHlt(void);
+BOOL kTestAndSet(volatile BYTE* pbDestination, BYTE bCompare, BYTE bSource);

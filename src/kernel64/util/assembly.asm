@@ -2,7 +2,7 @@
 
 SECTION .text
 
-global reloadCS, reloadDS, kReadTSC, kHlt
+global reloadCS, reloadDS, kReadTSC, kHlt, kTestAndSet
 
 reloadCS:
 	pop rax
@@ -36,3 +36,22 @@ kHlt:
     hlt
     hlt
     ret
+
+kTestAndSet:
+    ; PARAM:
+    ;     QWORD* pdwDestination
+	;     QWORD qwCompare
+	;     QWORD qwExchange
+
+    mov rax, rsi
+    
+    lock cmpxchg byte [ rdi ], dl   
+    je .EQUAL
+
+	.NOTEQUAL:
+		mov rax, 0x00
+		ret
+		
+	.EQUAL:
+		mov rax, 0x01
+		ret

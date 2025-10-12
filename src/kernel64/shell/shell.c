@@ -9,6 +9,8 @@
 #include "../util/assembly.h"
 #include "../util/memory.h"
 #include "../util/string.h"
+#include "../util/sync.h"
+#include "../util/timer.h"
 
 ////////////////////////////////////////////////////////////////
 // Shell Commands
@@ -262,7 +264,11 @@ static void kKillTask(PARAMETER_LIST* pstList) {
     char vcID[30];
     QWORD qwID;
 
-    kGetNextParameter(pstList, vcID);
+    if (kGetNextParameter(pstList, vcID) == 0) {
+        kPrintln("[Usage] killtask <ID>");
+        kPrintln("[Usage] killtask -1 (for kill all tasks)");
+        return;
+    }
 
     // 태스크를 종료
     if (kMemCmp(vcID, "0x", 2) == 0) {
@@ -271,8 +277,21 @@ static void kKillTask(PARAMETER_LIST* pstList) {
         qwID = kAToI(vcID, 10);
     }
 
-    if (qwID == 0) {
-        kPrintln("[Usage] killtask <ID>");
+    if (qwID == (QWORD)-1) {
+        int iCount = 0;
+
+        for (int i = 2; i < TASK_MAXCOUNT; i++) {
+            TCB* pstTCB = kGetTCBInTCBPool(i);
+            if ((pstTCB->stLink.qwID >> 32) == 0) {
+                continue;
+            }
+
+            if (kEndTask(pstTCB->stLink.qwID) == TRUE) {
+                iCount++;
+            }
+        }
+
+        kPrintf("Total %d tasks are killed.\n", iCount);
         return;
     }
 
@@ -297,7 +316,7 @@ SHELL_COMMAND_ENTRY gs_vstCommandTable[] = {
     {"createtask", "Create task", kCreateTestTask},
     {"changepriority", "Change task priority", kChangeTaskPriority},
     {"tasklist", "Show task list", kShowTaskList},
-    {"killtask", "Kill task", kKillTask},
+    {"kill", "Kill task", kKillTask},
 };
 
 static void kHelp(PARAMETER_LIST* pstList) {
