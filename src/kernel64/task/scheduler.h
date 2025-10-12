@@ -31,6 +31,9 @@ typedef struct kSchedulerStruct {
 
     // 유휴 태스크(Idle Task)에서 사용한 프로세서 시간
     QWORD qwSpendProcessorTimeInIdleTask;
+
+    // 마지막으로 FPU를 사용한 태스크의 ID
+    QWORD qwLastFPUUsedTaskID;
 } SCHEDULER;
 
 #pragma pack(pop)
@@ -57,5 +60,8 @@ QWORD kGetProcessorLoad(void);
 
 void kIdleTask(void);
 void kHaltProcessorByLoad(void);
+
+QWORD kGetLastFPUUsedTaskID(void);
+void kSetLastFPUUsedTaskID(QWORD qwTaskID);
 
 #endif /*__SCHEDULER_H__*/

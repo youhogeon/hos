@@ -13,6 +13,14 @@ static inline void loadGDTR(void* gdtr) { __asm__ volatile("lgdt (%0)" ::"r"(gdt
 static inline void loadIDTR(void* idtr) { __asm__ volatile("lidt (%0)" ::"r"(idtr)); }
 static inline void loadTR(WORD tr) { __asm__ volatile("ltr %w0" ::"r"(tr)); }
 
+static inline void kInitFPU(void) { __asm__ volatile("fninit"); }
+static inline void kSaveFPUContext(QWORD* pqwFPUContext) {
+    __asm__ volatile("fxsave (%0)" ::"r"(pqwFPUContext) : "memory");
+}
+static inline void kLoadFPUContext(QWORD* pqwFPUContext) {
+    __asm__ volatile("fxrstor (%0)" ::"r"(pqwFPUContext) : "memory");
+}
+
 static inline void sti(void) { __asm__ volatile("sti"); }
 static inline void cli(void) { __asm__ volatile("cli"); }
 
@@ -50,3 +58,5 @@ void reloadDS(WORD selector);
 QWORD kReadTSC(void);
 void kHlt(void);
 BOOL kTestAndSet(volatile BYTE* pbDestination, BYTE bCompare, BYTE bSource);
+void kSetTS(void);
+void kClearTS(void);

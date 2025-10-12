@@ -2,7 +2,7 @@
 
 SECTION .text
 
-global reloadCS, reloadDS, kReadTSC, kHlt, kTestAndSet
+global reloadCS, reloadDS, kReadTSC, kHlt, kTestAndSet, kSetTS, kClearTS
 
 reloadCS:
 	pop rax
@@ -55,3 +55,17 @@ kTestAndSet:
 	.EQUAL:
 		mov rax, 0x01
 		ret
+
+kSetTS:
+	push rax
+
+	mov rax, cr0
+	or rax, 0x8
+	mov cr0, rax
+
+	pop rax
+	ret
+
+kClearTS:
+	clts
+	ret

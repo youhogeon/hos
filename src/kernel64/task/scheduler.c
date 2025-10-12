@@ -34,6 +34,7 @@ void kInitScheduler(void) {
 
     gs_stScheduler.qwSpendProcessorTimeInIdleTask = 0;
     gs_stScheduler.qwProcessorLoad = 0;
+    gs_stScheduler.qwLastFPUUsedTaskID = TASK_INVALIDID;
 
     kInitPIT(MSTOCOUNT(1), 1);
 }
@@ -139,7 +140,7 @@ TCB* kCreateTask(QWORD qwFlags, void* pvMemoryAddress, QWORD qwMemorySize, QWORD
 
     // TCB를 설정한 후 준비 리스트에 삽입하여 스케줄링될 수 있도록 함
     kSetUpTask(pstTask, qwFlags, qwEntryPointAddress, pvStackAddress, TASK_STACKSIZE, (QWORD)kExitTask);
-
+    pstTask->bFPUUsed = FALSE;
     kInitList(&(pstTask->stChildThreadList));
 
     bPreviousFlag = kLockForSystemData();
@@ -239,6 +240,12 @@ void kSchedule(void) {
         gs_stScheduler.qwSpendProcessorTimeInIdleTask += TASK_PROCESSORTIME - gs_stScheduler.iProcessorTime;
     }
 
+    if (gs_stScheduler.qwLastFPUUsedTaskID != pstNextTask->stLink.qwID) {
+        kSetTS();
+    } else {
+        kClearTS();
+    }
+
     // 태스크 종료 플래그가 설정된 경우 콘텍스트를 저장할 필요가 없으므로, 대기 리스트에
     // 삽입하고 콘텍스트 전환
     if (pstRunningTask->qwFlags & TASK_FLAGS_ENDTASK) {
@@ -297,6 +304,12 @@ BOOL kScheduleInInterrupt(void) {
     }
 
     kUnlockForSystemData(bPreviousFlag);
+
+    if (gs_stScheduler.qwLastFPUUsedTaskID != pstNextTask->stLink.qwID) {
+        kSetTS();
+    } else {
+        kClearTS();
+    }
 
     // 전환해서 실행할 태스크를 Running Task로 설정하고 콘텍스트를 IST에 복사해서
     // 자동으로 태스크 전환이 일어나도록 함
@@ -497,3 +510,6 @@ void kHaltProcessorByLoad(void) {
         kHlt();
     }
 }
+
+QWORD kGetLastFPUUsedTaskID(void) { return gs_stScheduler.qwLastFPUUsedTaskID; }
+void kSetLastFPUUsedTaskID(QWORD qwTaskID) { gs_stScheduler.qwLastFPUUsedTaskID = qwTaskID; }

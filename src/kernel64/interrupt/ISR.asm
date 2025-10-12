@@ -5,6 +5,7 @@
 SECTION .text
 
 extern kCommonExceptionHandler, kCommonInterruptHandler
+extern kDeviceNotAvailableHandler
 extern kTimerHandler, kKeyboardHandler
 
 ; Exception ISR
@@ -99,7 +100,7 @@ kISR_DeviceNotAvailable:
     K_SAVE_CONTEXT
 
     mov rdi, 7
-    call kCommonExceptionHandler
+    call kDeviceNotAvailableHandler
 
     K_RESTORE_CONTEXT
     iretq

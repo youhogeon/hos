@@ -77,13 +77,19 @@ typedef struct kTaskControlBlockStruct {
     QWORD qwMemorySize;
 
     // Thread data
+    QWORD qwParentProcessID;
+    QWORD vqwFPUContext[512 / 8];
+    CONTEXT stContext;
+
     LISTLINK stThreadLink;
     LIST stChildThreadList;
-    QWORD qwParentProcessID;
-    CONTEXT stContext;
 
     void* pvStackAddress;
     QWORD qwStackSize;
+
+    BOOL bFPUUsed;
+
+    char vcPadding[11];
 } TCB;
 
 // TCB 풀의 상태를 관리하는 자료구조

@@ -32,9 +32,9 @@ kReadCPUID:
     ret
 
 kSwitchTo64:
-    ; Enable PAE
+    ; Enable PAE, OSXMMEXCPT, OSFXSR
     mov eax, cr4
-    or eax, 0x20
+    or eax, 0x620
     mov cr4, eax
 
     ; set PML4 table address
@@ -47,10 +47,12 @@ kSwitchTo64:
     or eax, 0x100
     wrmsr
 
-    ; Enable Cache, Paging
+    ; Enable Cache, Paging, FPU
+    ; NW=0, CD=0, PG=1
+    ; TS=1, EM=0, MP=1
     mov eax, cr0
-    or eax, 0xE0000000
-    xor eax, 0x60000000
+    or eax, 0xE000000E
+    xor eax, 0x60000004
     mov cr0, eax
 
     ; Far jump to 64bit code segment
