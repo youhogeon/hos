@@ -5,5 +5,7 @@
 
 QWORD kGetTickCount(void);
 void kIncreaseTickCount(void);
+void kSleep(QWORD qwMillisecond);
+QWORD kRandom(void);
 
 #endif /*__TIMER_H__*/

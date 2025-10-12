@@ -40,7 +40,7 @@ static void kShowTotalRAMSize(PARAMETER_LIST* pstList) { kPrintf("Total RAM size
 static void kWaitUsingPIT(PARAMETER_LIST* pstList) {
     char vcParameter[100];
     int iLength;
-    ;
+
     int i;
 
     // 파라미터 초기화
@@ -52,12 +52,7 @@ static void kWaitUsingPIT(PARAMETER_LIST* pstList) {
     long lMillisecond = kAToI(vcParameter, 10);
     kPrintf("%d ms sleep...\n", lMillisecond);
 
-    cli();
-    for (i = 0; i < lMillisecond / 25; i++) {
-        kWaitUsingDirectPIT(MSTOCOUNT(25));
-    }
-    kWaitUsingDirectPIT(MSTOCOUNT(lMillisecond % 25));
-    sti();
+    kSleep((QWORD)lMillisecond);
 
     kPrintf("%d ms sleep complete\n", lMillisecond);
     kInitPIT(MSTOCOUNT(1), TRUE);
@@ -179,7 +174,7 @@ static void kCreateTestTask(PARAMETER_LIST* pstList) {
     switch (kAToI(vcType, 10)) {
     case 1:
         for (int i = 0; i < count; i++) {
-            if (kCreateTask(TASK_FLAGS_LOW, (QWORD)kTestTask1) == NULL) {
+            if (kCreateTask(TASK_FLAGS_LOW | TASK_FLAGS_THREAD, 0, 0, (QWORD)kTestTask1) == NULL) {
                 break;
             }
         }
@@ -189,7 +184,7 @@ static void kCreateTestTask(PARAMETER_LIST* pstList) {
 
     case 2:
         for (int i = 0; i < count; i++) {
-            if (kCreateTask(TASK_FLAGS_LOW, (QWORD)kTestTask2) == NULL) {
+            if (kCreateTask(TASK_FLAGS_LOW | TASK_FLAGS_THREAD, 0, 0, (QWORD)kTestTask2) == NULL) {
                 break;
             }
         }
@@ -252,11 +247,16 @@ static void kShowTaskList(PARAMETER_LIST* pstList) {
             kPrintf("\n");
         }
 
-        kPrintf("[%d] Task ID[0x%Q], Priority[%d], Flags[0x%Q]\n",
+        kPrintf("[%d] Task ID[0x%Q], Priority[%d], Flags[0x%Q], Threads[%d]\n",
                 1 + iCount++,
                 pstTCB->stLink.qwID,
                 GETPRIORITY(pstTCB->qwFlags),
-                pstTCB->qwFlags);
+                pstTCB->qwFlags,
+                kGetListCount(&(pstTCB->stChildThreadList)));
+        kPrintf("    Parent PID[0x%Q], Memory Address[0x%Q], Size[0x%Q]\n",
+                pstTCB->qwParentProcessID,
+                pstTCB->pvMemoryAddress,
+                pstTCB->qwMemorySize);
     }
 }
 
@@ -282,7 +282,8 @@ static void kKillTask(PARAMETER_LIST* pstList) {
 
         for (int i = 2; i < TASK_MAXCOUNT; i++) {
             TCB* pstTCB = kGetTCBInTCBPool(i);
-            if ((pstTCB->stLink.qwID >> 32) == 0) {
+
+            if (((pstTCB->stLink.qwID >> 32) == 0) || ((pstTCB->qwFlags & TASK_FLAGS_SYSTEM) != 0x00)) {
                 continue;
             }
 
@@ -295,11 +296,72 @@ static void kKillTask(PARAMETER_LIST* pstList) {
         return;
     }
 
+    TCB* pstTCB = kGetTCBInTCBPool(GETTCBOFFSET(qwID));
+
+    if (((pstTCB->stLink.qwID >> 32) == 0) || ((pstTCB->qwFlags & TASK_FLAGS_SYSTEM) != 0x00)) {
+        kPrintlnColor("Cannot kill system task", VGA_ATTR_FOREGROUND_BRIGHTYELLOW);
+        return;
+    }
+
     kPrintf("Kill Task [0x%q]: ", qwID);
     if (kEndTask(qwID) == TRUE) {
         kPrintlnColor("Success", VGA_ATTR_FOREGROUND_BRIGHTGREEN);
     } else {
         kPrintlnColor("Fail", VGA_ATTR_FOREGROUND_BRIGHTRED);
+    }
+}
+
+static void kDropCharactorThread(void) {
+    char vcText[2] = {
+        0,
+    };
+
+    int iX = kRandom() % VGA_COLS;
+
+    while (1) {
+        kSleep(kRandom() % 20);
+
+        if ((kRandom() % 20) < 16) {
+            vcText[0] = ' ';
+            for (int i = 0; i < VGA_ROWS - 1; i++) {
+                kPrintAt(iX, i, vcText);
+                kSleep(50);
+            }
+        } else {
+            for (int i = 0; i < VGA_ROWS - 1; i++) {
+                vcText[0] = i + kRandom();
+                kPrintAt(iX, i, vcText);
+                kSleep(50);
+            }
+        }
+    }
+}
+
+static void kMatrixProcess(void) {
+    for (int i = 0; i < 300; i++) {
+        if (kCreateTask(TASK_FLAGS_THREAD | TASK_FLAGS_LOW, 0, 0, (QWORD)kDropCharactorThread) == NULL) {
+            break;
+        }
+
+        kSleep(kRandom() % 5 + 5);
+    }
+
+    kGetCh();
+}
+
+static void kShowMatrix(PARAMETER_LIST* pstList) {
+    kClear(0);
+
+    TCB* pstProcess =
+        kCreateTask(TASK_FLAGS_PROCESS | TASK_FLAGS_LOW, (void*)0xE00000, 0xE00000, (QWORD)kMatrixProcess);
+    if (pstProcess != NULL) {
+        while ((pstProcess->stLink.qwID >> 32) != 0) {
+            kSleep(100);
+        }
+
+        kClear(0);
+    } else {
+        kPrintlnColor("Matrix Process Create Fail", VGA_ATTR_FOREGROUND_BRIGHTRED);
     }
 }
 
@@ -317,6 +379,7 @@ SHELL_COMMAND_ENTRY gs_vstCommandTable[] = {
     {"changepriority", "Change task priority", kChangeTaskPriority},
     {"tasklist", "Show task list", kShowTaskList},
     {"kill", "Kill task", kKillTask},
+    {"matrix", "Show Matrix", kShowMatrix},
 };
 
 static void kHelp(PARAMETER_LIST* pstList) {

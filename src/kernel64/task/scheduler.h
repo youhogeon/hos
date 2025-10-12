@@ -3,22 +3,12 @@
 
 #include "../types.h"
 #include "../util/list.h"
-#include "task.h"
+#include "tcbpool.h"
 
 // 태스크가 최대로 쓸 수 있는 프로세서 시간(5 ms)
 #define TASK_PROCESSORTIME 5
 // 준비 리스트의 수
 #define TASK_MAXREADYLISTCOUNT 5
-
-#define TASK_FLAGS_HIGHEST 0
-#define TASK_FLAGS_HIGH 1
-#define TASK_FLAGS_MEDIUM 2
-#define TASK_FLAGS_LOW 3
-#define TASK_FLAGS_LOWEST 4
-#define TASK_FLAGS_WAIT 0xFF
-
-#define TASK_FLAGS_ENDTASK 0x8000000000000000
-#define TASK_FLAGS_IDLE 0x0800000000000000
 
 #pragma pack(push, 1)
 
@@ -46,21 +36,23 @@ typedef struct kSchedulerStruct {
 #pragma pack(pop)
 
 void kInitScheduler(void);
+TCB* kCreateTask(QWORD qwFlags, void* pvMemoryAddress, QWORD qwMemorySize, QWORD qwEntryPointAddress);
 void kSetRunningTask(TCB* pstTask);
 TCB* kGetRunningTask(void);
 TCB* kGetNextTaskToRun(void);
 BOOL kAddTaskToReadyList(TCB* pstTask);
-TCB* kCreateTask(QWORD qwFlags, QWORD qwEntryPointAddress);
-void kSchedule(void);
-BOOL kScheduleInInterrupt(void);
-void kDecreaseProcessorTime(void);
-BOOL kIsProcessorTimeExpired(void);
 TCB* kRemoveTaskFromReadyList(QWORD qwTaskID);
 BOOL kChangePriority(QWORD qwID, BYTE bPriority);
 BOOL kEndTask(QWORD qwTaskID);
 void kExitTask(void);
+
+void kSchedule(void);
+BOOL kScheduleInInterrupt(void);
+
 int kGetReadyTaskCount(void);
 int kGetTaskCount(void);
+void kDecreaseProcessorTime(void);
+BOOL kIsProcessorTimeExpired(void);
 QWORD kGetProcessorLoad(void);
 
 void kIdleTask(void);

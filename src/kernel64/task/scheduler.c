@@ -23,12 +23,17 @@ void kInitScheduler(void) {
     }
     kInitList(&(gs_stScheduler.stWaitList));
 
+    TCB* pstTask = kAllocateTCB();
+    gs_stScheduler.pstRunningTask = pstTask;
+    pstTask->qwFlags = TASK_FLAGS_HIGHEST | TASK_FLAGS_PROCESS | TASK_FLAGS_SYSTEM;
+    pstTask->qwParentProcessID = pstTask->stLink.qwID;
+    pstTask->pvMemoryAddress = (void*)0x100000;
+    pstTask->qwMemorySize = 0x500000;
+    pstTask->pvStackAddress = (void*)0x600000;
+    pstTask->qwStackSize = 0x100000;
+
     gs_stScheduler.qwSpendProcessorTimeInIdleTask = 0;
     gs_stScheduler.qwProcessorLoad = 0;
-
-    // kernel task
-    gs_stScheduler.pstRunningTask = kAllocateTCB();
-    gs_stScheduler.pstRunningTask->qwFlags = TASK_FLAGS_HIGHEST;
 
     kInitPIT(MSTOCOUNT(1), 1);
 }
@@ -97,7 +102,7 @@ BOOL kAddTaskToReadyList(TCB* pstTask) {
 /**
  * 태스크를 생성
  */
-TCB* kCreateTask(QWORD qwFlags, QWORD qwEntryPointAddress) {
+TCB* kCreateTask(QWORD qwFlags, void* pvMemoryAddress, QWORD qwMemorySize, QWORD qwEntryPointAddress) {
     BOOL bPreviousFlag = kLockForSystemData();
 
     TCB* pstTask = kAllocateTCB();
@@ -106,13 +111,36 @@ TCB* kCreateTask(QWORD qwFlags, QWORD qwEntryPointAddress) {
         return NULL;
     }
 
+    TCB* pstProcess = kGetProcessByThread(kGetRunningTask());
+    if (pstProcess == NULL) {
+        kFreeTCB(pstTask->stLink.qwID);
+        kUnlockForSystemData(bPreviousFlag);
+        return NULL;
+    }
+
+    if (qwFlags & TASK_FLAGS_THREAD) { // thread 생성
+        pstTask->qwParentProcessID = pstProcess->stLink.qwID;
+        pstTask->pvMemoryAddress = pstProcess->pvMemoryAddress;
+        pstTask->qwMemorySize = pstProcess->qwMemorySize;
+
+        kAddListToTail(&(pstProcess->stChildThreadList), &(pstTask->stThreadLink));
+    } else { // process 생성
+        pstTask->qwParentProcessID = pstProcess->stLink.qwID;
+        pstTask->pvMemoryAddress = pvMemoryAddress;
+        pstTask->qwMemorySize = qwMemorySize;
+    }
+
+    pstTask->stThreadLink.qwID = pstTask->stLink.qwID;
+
     kUnlockForSystemData(bPreviousFlag);
 
     // 태스크 ID로 스택 어드레스 계산, 하위 32비트가 스택 풀의 오프셋 역할 수행
     void* pvStackAddress = (void*)(TASK_STACKPOOLADDRESS + (TASK_STACKSIZE * (pstTask->stLink.qwID & 0xFFFFFFFF)));
 
     // TCB를 설정한 후 준비 리스트에 삽입하여 스케줄링될 수 있도록 함
-    kSetUpTask(pstTask, qwFlags, qwEntryPointAddress, pvStackAddress, TASK_STACKSIZE);
+    kSetUpTask(pstTask, qwFlags, qwEntryPointAddress, pvStackAddress, TASK_STACKSIZE, (QWORD)kExitTask);
+
+    kInitList(&(pstTask->stChildThreadList));
 
     bPreviousFlag = kLockForSystemData();
     kAddTaskToReadyList(pstTask);
@@ -410,6 +438,41 @@ void kIdleTask(void) {
                     kUnlockForSystemData(bPreviousFlag);
                     break;
                 }
+
+                if (pstTask->qwFlags & TASK_FLAGS_PROCESS) {
+                    int iCount = kGetListCount(&(pstTask->stChildThreadList));
+                    for (int i = 0; i < iCount; i++) {
+                        // 스레드 링크의 어드레스에서 꺼내 스레드를 종료시킴
+                        void* pstThreadLink = (TCB*)kRemoveListFromHeader(&(pstTask->stChildThreadList));
+                        if (pstThreadLink == NULL) {
+                            break;
+                        }
+
+                        TCB* pstChildThread = GETTCBFROMTHREADLINK(pstThreadLink);
+
+                        // 다시 자식 스레드 리스트에 삽입하여 해당 스레드가 종료될 때
+                        // 자식 스레드가 프로세스를 찾아 스스로 리스트에서 제거하도록 함
+                        kAddListToTail(&(pstTask->stChildThreadList), &(pstChildThread->stThreadLink));
+
+                        // 자식 스레드를 찾아서 종료
+                        kEndTask(pstChildThread->stLink.qwID);
+                    }
+
+                    if (kGetListCount(&(pstTask->stChildThreadList)) > 0) {
+                        kAddListToTail(&(gs_stScheduler.stWaitList), pstTask);
+
+                        kUnlockForSystemData(bPreviousFlag);
+                        continue;
+                    } else {
+                        // TODO: 할당 받은 메모리 영역을 삭제
+                    }
+                } else if (pstTask->qwFlags & TASK_FLAGS_THREAD) {
+                    TCB* pstProcess = kGetProcessByThread(pstTask);
+                    if (pstProcess != NULL) {
+                        kRemoveList(&(pstProcess->stChildThreadList), pstTask->stLink.qwID);
+                    }
+                }
+
                 kFreeTCB(pstTask->stLink.qwID);
                 kUnlockForSystemData(bPreviousFlag);
             }

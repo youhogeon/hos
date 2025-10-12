@@ -1,7 +1,7 @@
 #ifndef __SWITCHCONTEXT_H__
 #define __SWITCHCONTEXT_H__
 
-#include "task.h"
+#include "tcbpool.h"
 
 void kSwitchContext(CONTEXT* pstCurrentContext, CONTEXT* pstNextContext);
 
