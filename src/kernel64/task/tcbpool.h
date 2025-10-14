@@ -1,11 +1,12 @@
 #ifndef __TCBPOOL_H__
 #define __TCBPOOL_H__
 
+#include "../memory/memory_const.h"
 #include "../types.h"
 #include "../util/list.h"
 
 // 태스크 풀의 어드레스
-#define TASK_TCBPOOLADDRESS 0x800000
+#define TASK_TCBPOOLADDRESS MEMORY_ADDR_TCBPOOL
 #define TASK_MAXCOUNT 1024
 
 // 스택 풀과 스택의 크기

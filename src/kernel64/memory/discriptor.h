@@ -2,6 +2,7 @@
 #define __DESCRIPTOR_H__
 
 #include "../types.h"
+#include "memory_const.h"
 
 ////////////////////////////////////////////////////////////////
 // TSS, GDT
@@ -39,7 +40,7 @@
 #define GDT_KERNELCODESEGMENT 0x18
 #define GDT_KERNELDATASEGMENT 0x20
 
-#define TSS_STARTADDRESS 0x142000
+#define TSS_STARTADDRESS MEMORY_ADDR_TSS_GDT
 #define TSS_SIZE (sizeof(TSS))
 
 #define GDTR_STARTADDRESS (TSS_STARTADDRESS + TSS_SIZE)
@@ -64,12 +65,12 @@
 
 // Constants
 #define IDT_MAXENTRYCOUNT 100
-#define IDTR_STARTADDRESS 0x143000
+#define IDTR_STARTADDRESS MEMORY_ADDR_IDTR
 #define IDT_STARTADDRESS (IDTR_STARTADDRESS + sizeof(IDTR))
 #define IDT_TOTAL_SIZE (IDT_MAXENTRYCOUNT * sizeof(IDTENTRY))
 
-#define IST_STARTADDRESS 0x700000
-#define IST_SIZE 0x100000
+#define IST_STARTADDRESS MEMORY_ADDR_IST
+#define IST_SIZE MEMORY_SIZE_IST
 
 ////////////////////////////////////////////////////////////////
 // Structs

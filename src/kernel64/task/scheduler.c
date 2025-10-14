@@ -1,6 +1,7 @@
 #include "scheduler.h"
 #include "../io/PIT.h"
 #include "../memory/discriptor.h"
+#include "../memory/memory_const.h"
 #include "../util/assembly.h"
 #include "../util/list.h"
 #include "../util/memory.h"
@@ -27,10 +28,10 @@ void kInitScheduler(void) {
     gs_stScheduler.pstRunningTask = pstTask;
     pstTask->qwFlags = TASK_FLAGS_HIGHEST | TASK_FLAGS_PROCESS | TASK_FLAGS_SYSTEM;
     pstTask->qwParentProcessID = pstTask->stLink.qwID;
-    pstTask->pvMemoryAddress = (void*)0x100000;
-    pstTask->qwMemorySize = 0x500000;
-    pstTask->pvStackAddress = (void*)0x600000;
-    pstTask->qwStackSize = 0x100000;
+    pstTask->pvMemoryAddress = (void*)MEMORY_ADDR_K64_SOURCE;
+    pstTask->qwMemorySize = MEMORY_SIZE_K64_SOURCE;
+    pstTask->pvStackAddress = (void*)MEMORY_ADDR_K64_STACK;
+    pstTask->qwStackSize = MEMORY_SIZE_K64_STACK;
 
     gs_stScheduler.qwSpendProcessorTimeInIdleTask = 0;
     gs_stScheduler.qwProcessorLoad = 0;

@@ -22,6 +22,7 @@
 * 0x600000 ~ 0x6FFFFF : Kernel64 Stack
 * 0x700000 ~ 0x7FFFFF : IST
 * 0x800000 ~ 0x10FFFFF : Task pool, Task Stack pool
+* 0x1100000 ~ : Heap
 
 ## Build
 ```shell

@@ -12,7 +12,7 @@ BOOL kInitMemory(void) {
 
     // Clear Memory (1MB - 6MB)
     DWORD* currentAddr = (DWORD*)MEMORY_PAGE_BEGIN;
-    DWORD* maxAddr = (DWORD*)MEMORY_K64_END;
+    DWORD* maxAddr = (DWORD*)(MEMORY_K64_BEGIN + MEMORY_K64_SIZE);
 
     while (currentAddr < maxAddr) {
         *currentAddr = 0;
