@@ -1,4 +1,5 @@
 #include "interrupt/PIC.h"
+#include "io/ATA.h"
 #include "io/keyboard.h"
 #include "io/video.h"
 #include "memory/alloc.h"
@@ -32,10 +33,17 @@ void _start(void) {
         return;
     }
 
+    sti();
     kPrintln("PIC initialized.");
 
+    if (kInitATA() == FALSE) {
+        kPrintErr("ATA HDD initialization failed.");
+        return;
+    }
+
+    kPrintln("ATA HDD initialized.");
+
     // 마무리
-    sti();
     kPrintln("Kernel64 initialized.");
     kClear(5);
     kPrintln("");

@@ -1,4 +1,5 @@
 #include "handler.h"
+#include "../io/ATA.h"
 #include "../io/keyboard.h"
 #include "../io/video.h"
 #include "../task/scheduler.h"
@@ -71,4 +72,16 @@ void kKeyboardHandler(int iVectorNumber) {
     kGetKeyAndPutQueue();
 
     kSendEOIToPIC(iVectorNumber - PIC_IRQSTART_VECTOR);
+}
+
+void kHDDHandler(int iVectorNumber) {
+    int i = iVectorNumber - PIC_IRQSTART_VECTOR;
+
+    if (i == 14) { // 첫 번째 PATA 포트의 인터럽트 벡터(IRQ 14)
+        kSetATAInterruptFlag(TRUE, TRUE);
+    } else { // 두 번째 PATA 포트의 인터럽트 벡터(IRQ 15)
+        kSetATAInterruptFlag(FALSE, TRUE);
+    }
+
+    kSendEOIToPIC(i);
 }

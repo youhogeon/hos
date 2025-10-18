@@ -9,6 +9,14 @@ static inline BYTE inb(WORD port) {
     return ret;
 }
 
+static inline void outw(WORD port, WORD val) { __asm__ volatile("outw %0, %1" ::"a"(val), "Nd"(port)); }
+static inline WORD inw(WORD port) {
+    WORD ret;
+    __asm__ volatile("inw %1, %0" : "=a"(ret) : "Nd"(port));
+
+    return ret;
+}
+
 static inline void loadGDTR(void* gdtr) { __asm__ volatile("lgdt (%0)" ::"r"(gdtr)); }
 static inline void loadIDTR(void* idtr) { __asm__ volatile("lidt (%0)" ::"r"(idtr)); }
 static inline void loadTR(WORD tr) { __asm__ volatile("ltr %w0" ::"r"(tr)); }

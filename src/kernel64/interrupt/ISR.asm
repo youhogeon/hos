@@ -6,7 +6,7 @@ SECTION .text
 
 extern kCommonExceptionHandler, kCommonInterruptHandler
 extern kDeviceNotAvailableHandler
-extern kTimerHandler, kKeyboardHandler
+extern kTimerHandler, kKeyboardHandler, kHDDHandler
 
 ; Exception ISR
 global kISR_DivideError, kISR_Debug, kISR_NMI, kISR_BreakPoint, kISR_Overflow
@@ -399,7 +399,7 @@ kISR_HDD1:
     K_SAVE_CONTEXT
 
     mov rdi, 46
-    call kCommonInterruptHandler
+    call kHDDHandler
 
     K_RESTORE_CONTEXT
     iretq
@@ -409,7 +409,7 @@ kISR_HDD2:
     K_SAVE_CONTEXT
 
     mov rdi, 47
-    call kCommonInterruptHandler
+    call kHDDHandler
 
     K_RESTORE_CONTEXT
     iretq

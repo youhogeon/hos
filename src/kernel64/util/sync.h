@@ -24,7 +24,7 @@ BOOL kLockForSystemData(void);
 void kUnlockForSystemData(BOOL bInterruptFlag);
 
 void kInitMutex(MUTEX* pstMutex);
-void kLock(MUTEX* pstMutex, QWORD qwID);
-void kUnlock(MUTEX* pstMutex, QWORD qwID);
+void kLock(MUTEX* pstMutex);
+void kUnlock(MUTEX* pstMutex);
 
 #endif /*__SYNC_H__*/

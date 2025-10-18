@@ -24,7 +24,9 @@ void kInitMutex(MUTEX* pstMutex) {
 /**
  * 태스크 사이에서 사용하는 데이터를 위한 잠금 함수
  */
-void kLock(MUTEX* pstMutex, QWORD qwID) {
+void kLock(MUTEX* pstMutex) {
+    QWORD qwID = kGetRunningTask()->stLink.qwID;
+
     if (kTestAndSet(&(pstMutex->bLockFlag), 0, 1) == FALSE) {
         if (pstMutex->qwID == qwID) {
             pstMutex->dwLockCount++;
@@ -43,7 +45,9 @@ void kLock(MUTEX* pstMutex, QWORD qwID) {
 /**
  * 태스크 사이에서 사용하는 데이터를 위한 잠금 해제 함수
  */
-void kUnlock(MUTEX* pstMutex, QWORD qwID) {
+void kUnlock(MUTEX* pstMutex) {
+    QWORD qwID = kGetRunningTask()->stLink.qwID;
+
     // 뮤텍스를 잠근 태스크가 아니면 실패
     if ((pstMutex->bLockFlag == FALSE) || (pstMutex->qwID != qwID)) {
         return;
