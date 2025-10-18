@@ -4,6 +4,7 @@
 #include "../io/RTC.h"
 #include "../io/keyboard.h"
 #include "../io/video.h"
+#include "../memory/alloc.h"
 #include "../task/scheduler.h"
 #include "../task/tcbpool.h"
 #include "../util/assembly.h"
@@ -35,7 +36,21 @@ static void kEcho(PARAMETER_LIST* pstList) {
 
 static void kReboot_(PARAMETER_LIST* pstList) { kReboot(); }
 
-static void kShowTotalRAMSize(PARAMETER_LIST* pstList) { kPrintf("Total RAM size: %d MB\n", kMemSize()); }
+static void kShowMemoryInfo(PARAMETER_LIST* pstList) {
+    QWORD qwStartAddress, qwTotalSize, qwMetaSize, qwUsedSize;
+
+    kGetDynamicMemoryInformation(&qwStartAddress, &qwTotalSize, &qwMetaSize, &qwUsedSize);
+
+    DWORD totalMem = kMemSize();
+    QWORD systemUsed = qwStartAddress + qwMetaSize;
+    QWORD freeMem = totalMem - systemUsed - qwUsedSize;
+
+    kPrintln("======== Memory Information ========");
+    kPrintf("Total size:    [%d] MB\n", totalMem / 1024 / 1024);
+    kPrintf("System used:   [%d] MB\n", systemUsed / 1024 / 1024);
+    kPrintf("Dynamic used:  [%d] MB\n", qwUsedSize / 1024 / 1024);
+    kPrintf("Free size:     [%d] MB\n", freeMem / 1024 / 1024);
+}
 
 static void kWaitUsingPIT(PARAMETER_LIST* pstList) {
     char vcParameter[100];
@@ -370,7 +385,7 @@ SHELL_COMMAND_ENTRY gs_vstCommandTable[] = {
     {"clear", "Clear screen", kCls},
     {"echo", "Echo arguments", kEcho},
     {"reboot", "Reboot system", kReboot_},
-    {"memory", "Show total RAM size", kShowTotalRAMSize},
+    {"memory", "Show memory info", kShowMemoryInfo},
     {"cpuspeed", "Measure processor speed", kMeasureProcessorSpeed},
     {"cpuload", "Show processor load", kCPULoad},
     {"wait", "Wait ms using PIT.", kWaitUsingPIT},
@@ -379,7 +394,7 @@ SHELL_COMMAND_ENTRY gs_vstCommandTable[] = {
     {"changepriority", "Change task priority", kChangeTaskPriority},
     {"tasklist", "Show task list", kShowTaskList},
     {"kill", "Kill task", kKillTask},
-    {"matrix", "Show Matrix", kShowMatrix},
+    {"matrix", "Show MATRIX", kShowMatrix},
 };
 
 static void kHelp(PARAMETER_LIST* pstList) {

@@ -34,7 +34,7 @@ int kMemCmp(const void* pvDestination, const void* pvSource, int iSize) {
 
 static int gs_qwTotalRAMMBSize = 0;
 
-int kMemSize() {
+QWORD kMemSize() {
     if (gs_qwTotalRAMMBSize != 0) {
         return gs_qwTotalRAMMBSize;
     }
@@ -54,7 +54,5 @@ int kMemSize() {
         pdwCurrentAddress += 0x100000;
     }
 
-    gs_qwTotalRAMMBSize = (QWORD)pdwCurrentAddress / 0x100000;
-
-    return gs_qwTotalRAMMBSize;
+    return (QWORD)pdwCurrentAddress;
 }

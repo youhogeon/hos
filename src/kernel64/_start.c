@@ -1,6 +1,7 @@
 #include "interrupt/PIC.h"
 #include "io/keyboard.h"
 #include "io/video.h"
+#include "memory/alloc.h"
 #include "memory/discriptor.h"
 #include "shell/shell.h"
 #include "task/scheduler.h"
@@ -54,4 +55,6 @@ void _initMemory(void) {
 
     reloadCS(GDT_KERNELCODESEGMENT);
     reloadDS(GDT_KERNELDATASEGMENT);
+
+    kInitDynamicMemory();
 }
