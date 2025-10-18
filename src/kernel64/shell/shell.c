@@ -368,9 +368,6 @@ static void kShowMatrix(PARAMETER_LIST* pstList) {
     }
 }
 
-/**
- *  하드 디스크의 정보를 표시
- */
 static void kShowHDDInformation(PARAMETER_LIST* pstList) {
     HDDINFORMATION stHDD;
     char vcBuffer[100];
@@ -380,25 +377,22 @@ static void kShowHDDInformation(PARAMETER_LIST* pstList) {
         return;
     }
 
-    kPrintln("======== HDD Information (ATA, primary, master) ========");
+    kPrintln("======== HDD Information ========");
+    kPrintln("Driver:\t\t\t ATA, primary, master");
 
-    // 모델 번호 출력
     kMemCpy(vcBuffer, stHDD.vwModelNumber, sizeof(stHDD.vwModelNumber));
     vcBuffer[sizeof(stHDD.vwModelNumber) - 1] = '\0';
     kPrintf("Model Number:\t %s\n", vcBuffer);
 
-    // 시리얼 번호 출력
     kMemCpy(vcBuffer, stHDD.vwSerialNumber, sizeof(stHDD.vwSerialNumber));
     vcBuffer[sizeof(stHDD.vwSerialNumber) - 1] = '\0';
     kPrintf("Serial Number:\t %s\n", vcBuffer);
 
-    // 헤드, 실린더, 실린더 당 섹터 수를 출력
-    kPrintf("Head Count:\t %d\n", stHDD.wNumberOfHead);
+    kPrintf("Head Count:\t\t %d\n", stHDD.wNumberOfHead);
     kPrintf("Cylinder Count:\t %d\n", stHDD.wNumberOfCylinder);
     kPrintf("Sector Count:\t %d\n", stHDD.wNumberOfSectorPerCylinder);
-
-    // 총 섹터 수 출력
-    kPrintf("Total Sector:\t %d Sector, %dMB\n", stHDD.dwTotalSectors, stHDD.dwTotalSectors / 2 / 1024);
+    kPrintf("Total Sector:\t %d\n", stHDD.dwTotalSectors);
+    kPrintf("Total Size:\t\t %dMB\n", stHDD.dwTotalSectors / 2 / 1024);
 }
 
 static void kReadHDD(PARAMETER_LIST* pstList) {
