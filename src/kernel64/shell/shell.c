@@ -1,5 +1,6 @@
 
 #include "shell.h"
+#include "../io/ATA.h"
 #include "../io/PIT.h"
 #include "../io/RTC.h"
 #include "../io/keyboard.h"
@@ -380,6 +381,95 @@ static void kShowMatrix(PARAMETER_LIST* pstList) {
     }
 }
 
+/**
+ *  하드 디스크의 정보를 표시
+ */
+static void kShowHDDInformation(PARAMETER_LIST* pstList) {
+    HDDINFORMATION stHDD;
+    char vcBuffer[100];
+
+    if (kReadHDDInformation(TRUE, TRUE, &stHDD) == FALSE) {
+        kPrintErr("HDD Information Read Fail\n");
+        return;
+    }
+
+    kPrintln("======== HDD Information (ATA, primary, master) ========");
+
+    // 모델 번호 출력
+    kMemCpy(vcBuffer, stHDD.vwModelNumber, sizeof(stHDD.vwModelNumber));
+    vcBuffer[sizeof(stHDD.vwModelNumber) - 1] = '\0';
+    kPrintf("Model Number:\t %s\n", vcBuffer);
+
+    // 시리얼 번호 출력
+    kMemCpy(vcBuffer, stHDD.vwSerialNumber, sizeof(stHDD.vwSerialNumber));
+    vcBuffer[sizeof(stHDD.vwSerialNumber) - 1] = '\0';
+    kPrintf("Serial Number:\t %s\n", vcBuffer);
+
+    // 헤드, 실린더, 실린더 당 섹터 수를 출력
+    kPrintf("Head Count:\t %d\n", stHDD.wNumberOfHead);
+    kPrintf("Cylinder Count:\t %d\n", stHDD.wNumberOfCylinder);
+    kPrintf("Sector Count:\t %d\n", stHDD.wNumberOfSectorPerCylinder);
+
+    // 총 섹터 수 출력
+    kPrintf("Total Sector:\t %d Sector, %dMB\n", stHDD.dwTotalSectors, stHDD.dwTotalSectors / 2 / 1024);
+}
+
+static void kReadHDD(PARAMETER_LIST* pstList) {
+    char vcLBA[50];
+    if ((kGetNextParameter(pstList, vcLBA) == 0)) {
+        kPrintln("[Usage] readhdd <LBA>");
+        return;
+    }
+
+    DWORD dwLBA = kAToI(vcLBA, 10);
+    char* pcBuffer = kAllocateMemory(512);
+
+    if (kReadATASector(TRUE, TRUE, dwLBA, 1, pcBuffer) == 0) {
+        kPrintln("Read Fail");
+        kFreeMemory(pcBuffer);
+
+        return;
+    }
+
+    kPrintln(pcBuffer);
+
+    kFreeMemory(pcBuffer);
+}
+
+static void kWriteHDD(PARAMETER_LIST* pstList) {
+    char vcLBA[50];
+    char data[512] = {
+        0,
+    };
+    if ((kGetNextParameter(pstList, vcLBA) == 0)) {
+        kPrintln("[Usage] writehdd <LBA> <TEXT>");
+        return;
+    }
+
+    char* dataPt = data;
+
+    while (1) {
+        int size = kGetNextParameter(pstList, dataPt);
+        if (size == 0) {
+            break;
+        }
+
+        dataPt += size;
+        *dataPt = ' ';
+        dataPt++;
+    }
+
+    *(--dataPt) = '\0';
+
+    DWORD dwLBA = kAToI(vcLBA, 10);
+
+    if (kWriteATASector(TRUE, TRUE, dwLBA, 1, data) == 0) {
+        kPrintln("Write Fail");
+
+        return;
+    }
+}
+
 SHELL_COMMAND_ENTRY gs_vstCommandTable[] = {
     {"help", "Show all commands", kHelp},
     {"clear", "Clear screen", kCls},
@@ -395,6 +485,9 @@ SHELL_COMMAND_ENTRY gs_vstCommandTable[] = {
     {"tasklist", "Show task list", kShowTaskList},
     {"kill", "Kill task", kKillTask},
     {"matrix", "Show MATRIX", kShowMatrix},
+    {"hddinfo", "Show HDD info", kShowHDDInformation},
+    {"readhdd", "Read from HDD", kReadHDD},
+    {"writehdd", "Write to HDD", kWriteHDD},
 };
 
 static void kHelp(PARAMETER_LIST* pstList) {
