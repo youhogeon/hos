@@ -22,19 +22,6 @@ static void kHelp(PARAMETER_LIST* pstList);
 
 static void kCls(PARAMETER_LIST* pstList) { kClear(0); }
 
-static void kEcho(PARAMETER_LIST* pstList) {
-    char pcParameter[100];
-    int iLength;
-
-    while (1) {
-        iLength = kGetNextParameter(pstList, pcParameter);
-        if (iLength == 0) {
-            break;
-        }
-        kPrintln(pcParameter);
-    }
-}
-
 static void kReboot_(PARAMETER_LIST* pstList) { kReboot(); }
 
 static void kShowMemoryInfo(PARAMETER_LIST* pstList) {
@@ -109,138 +96,138 @@ static void kShowDateAndTime(PARAMETER_LIST* pstList) {
     kPrintf("%d:%d:%d\n", bHour, bMinute, bSecond);
 }
 
-static void kTestTask1(void) {
-    BYTE bData;
-    int i = 0, iX = 0, iY = 0, iMargin;
-    TCB* pstRunningTask;
+// static void kTestTask1(void) {
+//     BYTE bData;
+//     int i = 0, iX = 0, iY = 0, iMargin;
+//     TCB* pstRunningTask;
 
-    // 자신의 ID를 얻어서 화면 오프셋으로 사용
-    pstRunningTask = kGetRunningTask();
-    iMargin = (pstRunningTask->stLink.qwID & 0xFFFFFFFF) % 10;
+//     // 자신의 ID를 얻어서 화면 오프셋으로 사용
+//     pstRunningTask = kGetRunningTask();
+//     iMargin = (pstRunningTask->stLink.qwID & 0xFFFFFFFF) % 10;
 
-    while (1) {
-        switch (i) {
-        case 0:
-            iX++;
-            if (iX >= (VGA_COLS - iMargin)) {
-                i = 1;
-            }
-            break;
+//     while (1) {
+//         switch (i) {
+//         case 0:
+//             iX++;
+//             if (iX >= (VGA_COLS - iMargin)) {
+//                 i = 1;
+//             }
+//             break;
 
-        case 1:
-            iY++;
-            if (iY >= (VGA_ROWS - iMargin)) {
-                i = 2;
-            }
-            break;
+//         case 1:
+//             iY++;
+//             if (iY >= (VGA_ROWS - iMargin)) {
+//                 i = 2;
+//             }
+//             break;
 
-        case 2:
-            iX--;
-            if (iX < iMargin) {
-                i = 3;
-            }
-            break;
+//         case 2:
+//             iX--;
+//             if (iX < iMargin) {
+//                 i = 3;
+//             }
+//             break;
 
-        case 3:
-            iY--;
-            if (iY < iMargin) {
-                i = 0;
-            }
-            break;
-        }
+//         case 3:
+//             iY--;
+//             if (iY < iMargin) {
+//                 i = 0;
+//             }
+//             break;
+//         }
 
-        char d[2] = {bData, 0};
-        kPrintAt(iX, iY, d);
-        bData++;
+//         char d[2] = {bData, 0};
+//         kPrintAt(iX, iY, d);
+//         bData++;
 
-        kSchedule();
-    }
-}
+//         kSchedule();
+//     }
+// }
 
-static void kTestTask2(void) {
-    char vcData[4] = {'-', '\\', '|', '/'};
-    int i = 0;
+// static void kTestTask2(void) {
+//     char vcData[4] = {'-', '\\', '|', '/'};
+//     int i = 0;
 
-    TCB* pstRunningTask = kGetRunningTask();
-    int id = (pstRunningTask->stLink.qwID & 0xFFFFFFFF);
+//     TCB* pstRunningTask = kGetRunningTask();
+//     int id = (pstRunningTask->stLink.qwID & 0xFFFFFFFF);
 
-    while (1) {
-        char d[2] = {vcData[i % 4], 0};
-        kPrintAt(id % VGA_COLS, (id / VGA_COLS) % VGA_ROWS, d);
+//     while (1) {
+//         char d[2] = {vcData[i % 4], 0};
+//         kPrintAt(id % VGA_COLS, (id / VGA_COLS) % VGA_ROWS, d);
 
-        i++;
+//         i++;
 
-        kSchedule();
-    }
-}
+//         kSchedule();
+//     }
+// }
 
-static void kCreateTestTask(PARAMETER_LIST* pstList) {
-    char vcType[30];
-    char vcCount[30];
+// static void kCreateTestTask(PARAMETER_LIST* pstList) {
+//     char vcType[30];
+//     char vcCount[30];
 
-    kGetNextParameter(pstList, vcType);
-    kGetNextParameter(pstList, vcCount);
+//     kGetNextParameter(pstList, vcType);
+//     kGetNextParameter(pstList, vcCount);
 
-    int count = kAToI(vcCount, 10);
-    if (count <= 0) {
-        kPrintln("[Usage] createtask <type:1,2> <count>");
-        return;
-    }
+//     int count = kAToI(vcCount, 10);
+//     if (count <= 0) {
+//         kPrintln("[Usage] createtask <type:1,2> <count>");
+//         return;
+//     }
 
-    switch (kAToI(vcType, 10)) {
-    case 1:
-        for (int i = 0; i < count; i++) {
-            if (kCreateTask(TASK_FLAGS_LOW | TASK_FLAGS_THREAD, 0, 0, (QWORD)kTestTask1) == NULL) {
-                break;
-            }
-        }
+//     switch (kAToI(vcType, 10)) {
+//     case 1:
+//         for (int i = 0; i < count; i++) {
+//             if (kCreateTask(TASK_FLAGS_LOW | TASK_FLAGS_THREAD, 0, 0, (QWORD)kTestTask1) == NULL) {
+//                 break;
+//             }
+//         }
 
-        kPrintf("Task1 Created\n");
-        break;
+//         kPrintf("Task1 Created\n");
+//         break;
 
-    case 2:
-        for (int i = 0; i < count; i++) {
-            if (kCreateTask(TASK_FLAGS_LOW | TASK_FLAGS_THREAD, 0, 0, (QWORD)kTestTask2) == NULL) {
-                break;
-            }
-        }
+//     case 2:
+//         for (int i = 0; i < count; i++) {
+//             if (kCreateTask(TASK_FLAGS_LOW | TASK_FLAGS_THREAD, 0, 0, (QWORD)kTestTask2) == NULL) {
+//                 break;
+//             }
+//         }
 
-        kPrintf("Task2 Created\n");
-        break;
-    default:
-        kPrintln("[Usage] createtask <type:1,2> <count>");
-    }
-}
+//         kPrintf("Task2 Created\n");
+//         break;
+//     default:
+//         kPrintln("[Usage] createtask <type:1,2> <count>");
+//     }
+// }
 
-static void kChangeTaskPriority(PARAMETER_LIST* pstList) {
-    char vcID[30];
-    char vcPriority[30];
-    QWORD qwID;
+// static void kChangeTaskPriority(PARAMETER_LIST* pstList) {
+//     char vcID[30];
+//     char vcPriority[30];
+//     QWORD qwID;
 
-    kGetNextParameter(pstList, vcID);
-    kGetNextParameter(pstList, vcPriority);
+//     kGetNextParameter(pstList, vcID);
+//     kGetNextParameter(pstList, vcPriority);
 
-    if (kMemCmp(vcID, "0x", 2) == 0) {
-        qwID = kAToI(vcID + 2, 16);
-    } else {
-        qwID = kAToI(vcID, 10);
-    }
+//     if (kMemCmp(vcID, "0x", 2) == 0) {
+//         qwID = kAToI(vcID + 2, 16);
+//     } else {
+//         qwID = kAToI(vcID, 10);
+//     }
 
-    if (qwID == 0) {
-        kPrintln("[Usage] changepriority <ID> <PRIORITY:0,1,2,3,4)>");
-        return;
-    }
+//     if (qwID == 0) {
+//         kPrintln("[Usage] changepriority <ID> <PRIORITY:0,1,2,3,4)>");
+//         return;
+//     }
 
-    BYTE bPriority = kAToI(vcPriority, 10);
+//     BYTE bPriority = kAToI(vcPriority, 10);
 
-    kPrintf("Change priority of task [0x%q] had changed to [%d]: ", qwID, bPriority);
+//     kPrintf("Change priority of task [0x%q] had changed to [%d]: ", qwID, bPriority);
 
-    if (kChangePriority(qwID, bPriority) == TRUE) {
-        kPrintlnColor("Success", VGA_ATTR_FOREGROUND_BRIGHTGREEN);
-    } else {
-        kPrintlnColor("Fail", VGA_ATTR_FOREGROUND_BRIGHTRED);
-    }
-}
+//     if (kChangePriority(qwID, bPriority) == TRUE) {
+//         kPrintlnColor("Success", VGA_ATTR_FOREGROUND_BRIGHTGREEN);
+//     } else {
+//         kPrintlnColor("Fail", VGA_ATTR_FOREGROUND_BRIGHTRED);
+//     }
+// }
 
 static void kShowTaskList(PARAMETER_LIST* pstList) {
     int iCount = 0;
@@ -473,15 +460,14 @@ static void kWriteHDD(PARAMETER_LIST* pstList) {
 SHELL_COMMAND_ENTRY gs_vstCommandTable[] = {
     {"help", "Show all commands", kHelp},
     {"clear", "Clear screen", kCls},
-    {"echo", "Echo arguments", kEcho},
     {"reboot", "Reboot system", kReboot_},
     {"memory", "Show memory info", kShowMemoryInfo},
     {"cpuspeed", "Measure processor speed", kMeasureProcessorSpeed},
     {"cpuload", "Show processor load", kCPULoad},
     {"wait", "Wait ms using PIT.", kWaitUsingPIT},
     {"datetime", "Show date and time", kShowDateAndTime},
-    {"createtask", "Create task", kCreateTestTask},
-    {"changepriority", "Change task priority", kChangeTaskPriority},
+    // {"createtask", "Create task", kCreateTestTask},
+    // {"changepriority", "Change task priority", kChangeTaskPriority},
     {"tasklist", "Show task list", kShowTaskList},
     {"kill", "Kill task", kKillTask},
     {"matrix", "Show MATRIX", kShowMatrix},
