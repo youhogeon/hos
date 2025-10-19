@@ -93,7 +93,7 @@ typedef struct kATAManagerStruct {
 } ATAMANAGER;
 
 BOOL kInitATA(void);
-BOOL kReadHDDInformation(BOOL bPrimary, BOOL bMaster, HDDINFORMATION* pstHDDInformation);
+BOOL kReadATAInformation(BOOL bPrimary, BOOL bMaster, HDDINFORMATION* pstHDDInformation);
 int kReadATASector(BOOL bPrimary, BOOL bMaster, DWORD dwLBA, int iSectorCount, char* pcBuffer);
 int kWriteATASector(BOOL bPrimary, BOOL bMaster, DWORD dwLBA, int iSectorCount, char* pcBuffer);
 void kSetATAInterruptFlag(BOOL bPrimary, BOOL bFlag);

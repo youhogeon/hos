@@ -114,7 +114,7 @@ BOOL kInitATA(void) {
     outb(ATA_PORT_SECONDARYBASE + ATA_PORT_INDEX_DIGITALOUTPUT, 0);
 
     // primary master 하드 디스크 정보 요청
-    if (kReadHDDInformation(TRUE, TRUE, &(gs_stATAManager.stHDDInformation)) == FALSE) {
+    if (kReadATAInformation(TRUE, TRUE, &(gs_stATAManager.stHDDInformation)) == FALSE) {
         gs_stATAManager.bHDDDetected = FALSE;
         gs_stATAManager.bCanWrite = FALSE;
 
@@ -130,7 +130,7 @@ BOOL kInitATA(void) {
 /**
  * 하드 디스크의 정보를 읽음
  */
-BOOL kReadHDDInformation(BOOL bPrimary, BOOL bMaster, HDDINFORMATION* pstHDDInformation) {
+BOOL kReadATAInformation(BOOL bPrimary, BOOL bMaster, HDDINFORMATION* pstHDDInformation) {
     // PATA 포트에 따라서 I/O 포트의 기본 어드레스를 설정
     WORD wPortBase;
     if (bPrimary == TRUE) {

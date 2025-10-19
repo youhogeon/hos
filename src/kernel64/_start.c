@@ -1,3 +1,4 @@
+#include "fs/mintfs.h"
 #include "interrupt/PIC.h"
 #include "io/ATA.h"
 #include "io/keyboard.h"
@@ -10,14 +11,45 @@
 #include "util/assembly.h"
 #include "util/memory.h"
 
-void _initMemory(void);
+void _initMemory(void) {
+    kMemSize();
+
+    kInitGDTAndTSS();
+    kInitIDT();
+
+    loadGDTR((GDTR*)GDTR_STARTADDRESS);
+    loadTR(GDT_TSSSEGMENT);
+    loadIDTR((IDTR*)IDTR_STARTADDRESS);
+
+    reloadCS(GDT_KERNELCODESEGMENT);
+    reloadDS(GDT_KERNELDATASEGMENT);
+
+    kInitDynamicMemory();
+
+    kPrintln("Memory initialized.");
+}
+
+void _initDisk(void) {
+    if (kInitATA() == FALSE) {
+        kPrintErr("ATA HDD initialization failed.");
+        return;
+    }
+
+    kPrintln("ATA HDD initialized.");
+
+    if (kInitFileSystem() == FALSE) {
+        kPrintErr("File System initialization failed.");
+        return;
+    }
+
+    kPrintln("File System initialized.");
+}
 
 void _start(void) {
     kPrintln("Switched to long mode.");
 
     // Init memory
     _initMemory();
-    kPrintln("Memory initialized.");
 
     // Init scheduler
     kInitScheduler();
@@ -36,12 +68,8 @@ void _start(void) {
     sti();
     kPrintln("PIC initialized.");
 
-    if (kInitATA() == FALSE) {
-        kPrintErr("ATA HDD initialization failed.");
-        return;
-    }
-
-    kPrintln("ATA HDD initialized.");
+    // Init Disk, File system
+    _initDisk();
 
     // 마무리
     kPrintln("Kernel64 initialized.");
@@ -49,20 +77,4 @@ void _start(void) {
     kPrintln("");
 
     kStartConsoleShell();
-}
-
-void _initMemory(void) {
-    kMemSize();
-
-    kInitGDTAndTSS();
-    kInitIDT();
-
-    loadGDTR((GDTR*)GDTR_STARTADDRESS);
-    loadTR(GDT_TSSSEGMENT);
-    loadIDTR((IDTR*)IDTR_STARTADDRESS);
-
-    reloadCS(GDT_KERNELCODESEGMENT);
-    reloadDS(GDT_KERNELDATASEGMENT);
-
-    kInitDynamicMemory();
 }
