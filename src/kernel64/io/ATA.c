@@ -114,7 +114,7 @@ BOOL kInitATA(void) {
     outb(ATA_PORT_SECONDARYBASE + ATA_PORT_INDEX_DIGITALOUTPUT, 0);
 
     // primary master 하드 디스크 정보 요청
-    if (kReadATAInformation(TRUE, TRUE, &(gs_stATAManager.stHDDInformation)) == FALSE) {
+    if (!kReadATAInformation(TRUE, TRUE, &(gs_stATAManager.stHDDInformation))) {
         gs_stATAManager.bHDDDetected = FALSE;
         gs_stATAManager.bCanWrite = FALSE;
 
@@ -141,7 +141,7 @@ BOOL kReadATAInformation(BOOL bPrimary, BOOL bMaster, HDDINFORMATION* pstHDDInfo
     kLock(&(gs_stATAManager.stMutex));
 
     // 아직 수행 중인 커맨드가 있다면 일정 시간 동안 끝날 때까지 대기
-    if (kWaitForATANoBusy(bPrimary) == FALSE) {
+    if (!kWaitForATANoBusy(bPrimary)) {
         kUnlock(&(gs_stATAManager.stMutex));
 
         return FALSE;
@@ -158,7 +158,7 @@ BOOL kReadATAInformation(BOOL bPrimary, BOOL bMaster, HDDINFORMATION* pstHDDInfo
     }
 
     outb(wPortBase + ATA_PORT_INDEX_DRIVEANDHEAD, bDriveFlag);
-    if (kWaitForATAReady(bPrimary) == FALSE) {
+    if (!kWaitForATAReady(bPrimary)) {
         kUnlock(&(gs_stATAManager.stMutex));
 
         return FALSE;
@@ -188,6 +188,18 @@ BOOL kReadATAInformation(BOOL bPrimary, BOOL bMaster, HDDINFORMATION* pstHDDInfo
     kUnlock(&(gs_stATAManager.stMutex));
 
     return TRUE;
+}
+
+static BOOL kWaitForATADRQ(BOOL bPrimary) {
+    QWORD start = kGetTickCount();
+    while (kGetTickCount() - start <= ATA_WAITTIME) {
+        BYTE s = kReadATAStatus(bPrimary);
+        if ((s & ATA_STATUS_BUSY) == 0 && (s & ATA_STATUS_DATAREQUEST))
+            return TRUE;
+        if (s & ATA_STATUS_ERROR)
+            return FALSE;
+    }
+    return FALSE;
 }
 
 /**
@@ -224,7 +236,7 @@ int kReadATASector(BOOL bPrimary, BOOL bMaster, DWORD dwLBA, int iSectorCount, c
 
     kLock(&(gs_stATAManager.stMutex));
 
-    if (kWaitForATANoBusy(bPrimary) == FALSE) {
+    if (!kWaitForATANoBusy(bPrimary)) {
         kUnlock(&(gs_stATAManager.stMutex));
 
         return FALSE;
@@ -242,7 +254,7 @@ int kReadATASector(BOOL bPrimary, BOOL bMaster, DWORD dwLBA, int iSectorCount, c
     outb(wPortBase + ATA_PORT_INDEX_DRIVEANDHEAD, bDriveFlag | ((dwLBA >> 24) & 0x0F));
 
     // 커맨드 전송 준비
-    if (kWaitForATAReady(bPrimary) == FALSE) {
+    if (!kWaitForATAReady(bPrimary)) {
         kUnlock(&(gs_stATAManager.stMutex));
 
         return FALSE;
@@ -257,22 +269,11 @@ int kReadATASector(BOOL bPrimary, BOOL bMaster, DWORD dwLBA, int iSectorCount, c
     int i;
     long lReadCount = 0;
     for (i = 0; i < iSectorCount; i++) {
-        BYTE bStatus = kReadATAStatus(bPrimary);
-        if ((bStatus & ATA_STATUS_ERROR) == ATA_STATUS_ERROR) {
-            kUnlock(&(gs_stATAManager.stMutex));
-
-            return FALSE;
-        }
-
-        // DATAREQUEST 비트가 설정되지 않았으면 데이터가 수신되길 기다림
-        if ((bStatus & ATA_STATUS_DATAREQUEST) != ATA_STATUS_DATAREQUEST) {
-            BOOL bWaitResult = kWaitForATAInterrupt(bPrimary);
-            kSetATAInterruptFlag(bPrimary, FALSE);
-
-            if (bWaitResult == FALSE) {
+        if (!kWaitForATADRQ(bPrimary)) {
+            // 인터럽트 백업 대기
+            if (!kWaitForATAInterrupt(bPrimary) || !kWaitForATADRQ(bPrimary)) {
                 kUnlock(&(gs_stATAManager.stMutex));
-
-                return FALSE;
+                return i;
             }
         }
 
@@ -304,23 +305,14 @@ int kWriteATASector(BOOL bPrimary, BOOL bMaster, DWORD dwLBA, int iSectorCount, 
         iSectorCount = gs_stATAManager.stHDDInformation.dwTotalSectors - dwLBA;
     }
 
-    WORD wPortBase;
-    if (bPrimary == TRUE) {
-        wPortBase = ATA_PORT_PRIMARYBASE;
-    } else {
-        wPortBase = ATA_PORT_SECONDARYBASE;
-    }
-
-    BYTE bDriveFlag;
-    if (bMaster == TRUE) {
-        bDriveFlag = ATA_DRIVEANDHEAD_LBA;
-    } else {
-        bDriveFlag = ATA_DRIVEANDHEAD_LBA | ATA_DRIVEANDHEAD_SLAVE;
-    }
+    WORD wPortBase = bPrimary == TRUE ? ATA_PORT_PRIMARYBASE : ATA_PORT_SECONDARYBASE;
+    BYTE bDriveFlag = bMaster == TRUE ? ATA_DRIVEANDHEAD_LBA : (ATA_DRIVEANDHEAD_LBA | ATA_DRIVEANDHEAD_SLAVE);
 
     kLock(&(gs_stATAManager.stMutex));
 
-    if (kWaitForATANoBusy(bPrimary) == FALSE) {
+    if (!kWaitForATANoBusy(bPrimary)) {
+        kUnlock(&(gs_stATAManager.stMutex));
+
         return FALSE;
     }
 
@@ -336,7 +328,7 @@ int kWriteATASector(BOOL bPrimary, BOOL bMaster, DWORD dwLBA, int iSectorCount, 
     outb(wPortBase + ATA_PORT_INDEX_DRIVEANDHEAD, bDriveFlag | ((dwLBA >> 24) & 0x0F));
 
     // 커맨드 전송 준비
-    if (kWaitForATAReady(bPrimary) == FALSE) {
+    if (!kWaitForATAReady(bPrimary)) {
         kUnlock(&(gs_stATAManager.stMutex));
 
         return FALSE;
@@ -346,51 +338,30 @@ int kWriteATASector(BOOL bPrimary, BOOL bMaster, DWORD dwLBA, int iSectorCount, 
     outb(wPortBase + ATA_PORT_INDEX_COMMAND, ATA_COMMAND_WRITE);
 
     // 데이터 송신이 가능할 때까지 대기
-    while (1) {
-        BYTE bStatus = kReadATAStatus(bPrimary);
-        if ((bStatus & ATA_STATUS_ERROR) == ATA_STATUS_ERROR) {
-            kUnlock(&(gs_stATAManager.stMutex));
-
-            return FALSE;
-        }
-
-        // Data Request 비트가 설정되었다면 데이터 송신 가능
-        if ((bStatus & ATA_STATUS_DATAREQUEST) == ATA_STATUS_DATAREQUEST) {
-            break;
-        }
-
-        kSleep(1);
+    if (!kWaitForATADRQ(bPrimary)) {
+        kUnlock(&(gs_stATAManager.stMutex));
+        return 0;
     }
 
     // 데이터 송신
     int i;
     long lReadCount = 0;
     for (i = 0; i < iSectorCount; i++) {
-        kSetATAInterruptFlag(bPrimary, FALSE);
         for (int j = 0; j < 256; j++) {
             outw(wPortBase + ATA_PORT_INDEX_DATA, ((WORD*)pcBuffer)[lReadCount++]);
         }
 
-        BYTE bStatus = kReadATAStatus(bPrimary);
-        if ((bStatus & ATA_STATUS_ERROR) == ATA_STATUS_ERROR) {
-            kUnlock(&(gs_stATAManager.stMutex));
-
-            return i;
-        }
-
-        // DATAREQUEST 비트가 설정되지 않았으면 데이터가 처리가 완료되길 기다림
-        if ((bStatus & ATA_STATUS_DATAREQUEST) != ATA_STATUS_DATAREQUEST) {
-            BOOL bWaitResult = kWaitForATAInterrupt(bPrimary);
-            kSetATAInterruptFlag(bPrimary, FALSE);
-
-            if (bWaitResult == FALSE) {
-                kUnlock(&(gs_stATAManager.stMutex));
-
-                return FALSE;
+        if (i != iSectorCount - 1) {
+            if (!kWaitForATADRQ(bPrimary)) {
+                if (!kWaitForATAInterrupt(bPrimary) || !kWaitForATADRQ(bPrimary)) {
+                    kUnlock(&(gs_stATAManager.stMutex));
+                    return i + 1;
+                }
             }
         }
     }
 
+    kWaitForATANoBusy(bPrimary);
     kUnlock(&(gs_stATAManager.stMutex));
 
     return i;
