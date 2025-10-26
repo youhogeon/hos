@@ -97,138 +97,35 @@ static void kShowDateAndTime(PARAMETER_LIST* pstList) {
     kPrintf("%d:%d:%d\n", bHour, bMinute, bSecond);
 }
 
-// static void kTestTask1(void) {
-//     BYTE bData;
-//     int i = 0, iX = 0, iY = 0, iMargin;
-//     TCB* pstRunningTask;
+static void kChangeTaskPriority(PARAMETER_LIST* pstList) {
+    char vcID[30];
+    char vcPriority[30];
+    QWORD qwID;
 
-//     // 자신의 ID를 얻어서 화면 오프셋으로 사용
-//     pstRunningTask = kGetRunningTask();
-//     iMargin = (pstRunningTask->stLink.qwID & 0xFFFFFFFF) % 10;
+    kGetNextParameter(pstList, vcID);
+    kGetNextParameter(pstList, vcPriority);
 
-//     while (1) {
-//         switch (i) {
-//         case 0:
-//             iX++;
-//             if (iX >= (VGA_COLS - iMargin)) {
-//                 i = 1;
-//             }
-//             break;
+    if (kMemCmp(vcID, "0x", 2) == 0) {
+        qwID = kAToI(vcID + 2, 16);
+    } else {
+        qwID = kAToI(vcID, 10);
+    }
 
-//         case 1:
-//             iY++;
-//             if (iY >= (VGA_ROWS - iMargin)) {
-//                 i = 2;
-//             }
-//             break;
+    if (qwID == 0) {
+        kPrintln("[Usage] changepriority <ID> <PRIORITY:0,1,2,3,4)>");
+        return;
+    }
 
-//         case 2:
-//             iX--;
-//             if (iX < iMargin) {
-//                 i = 3;
-//             }
-//             break;
+    BYTE bPriority = kAToI(vcPriority, 10);
 
-//         case 3:
-//             iY--;
-//             if (iY < iMargin) {
-//                 i = 0;
-//             }
-//             break;
-//         }
+    kPrintf("Change priority of task [0x%q] had changed to [%d]: ", qwID, bPriority);
 
-//         char d[2] = {bData, 0};
-//         kPrintAt(iX, iY, d);
-//         bData++;
-
-//         kSchedule();
-//     }
-// }
-
-// static void kTestTask2(void) {
-//     char vcData[4] = {'-', '\\', '|', '/'};
-//     int i = 0;
-
-//     TCB* pstRunningTask = kGetRunningTask();
-//     int id = (pstRunningTask->stLink.qwID & 0xFFFFFFFF);
-
-//     while (1) {
-//         char d[2] = {vcData[i % 4], 0};
-//         kPrintAt(id % VGA_COLS, (id / VGA_COLS) % VGA_ROWS, d);
-
-//         i++;
-
-//         kSchedule();
-//     }
-// }
-
-// static void kCreateTestTask(PARAMETER_LIST* pstList) {
-//     char vcType[30];
-//     char vcCount[30];
-
-//     kGetNextParameter(pstList, vcType);
-//     kGetNextParameter(pstList, vcCount);
-
-//     int count = kAToI(vcCount, 10);
-//     if (count <= 0) {
-//         kPrintln("[Usage] createtask <type:1,2> <count>");
-//         return;
-//     }
-
-//     switch (kAToI(vcType, 10)) {
-//     case 1:
-//         for (int i = 0; i < count; i++) {
-//             if (kCreateTask(TASK_FLAGS_LOW | TASK_FLAGS_THREAD, 0, 0, (QWORD)kTestTask1) == NULL) {
-//                 break;
-//             }
-//         }
-
-//         kPrintf("Task1 Created\n");
-//         break;
-
-//     case 2:
-//         for (int i = 0; i < count; i++) {
-//             if (kCreateTask(TASK_FLAGS_LOW | TASK_FLAGS_THREAD, 0, 0, (QWORD)kTestTask2) == NULL) {
-//                 break;
-//             }
-//         }
-
-//         kPrintf("Task2 Created\n");
-//         break;
-//     default:
-//         kPrintln("[Usage] createtask <type:1,2> <count>");
-//     }
-// }
-
-// static void kChangeTaskPriority(PARAMETER_LIST* pstList) {
-//     char vcID[30];
-//     char vcPriority[30];
-//     QWORD qwID;
-
-//     kGetNextParameter(pstList, vcID);
-//     kGetNextParameter(pstList, vcPriority);
-
-//     if (kMemCmp(vcID, "0x", 2) == 0) {
-//         qwID = kAToI(vcID + 2, 16);
-//     } else {
-//         qwID = kAToI(vcID, 10);
-//     }
-
-//     if (qwID == 0) {
-//         kPrintln("[Usage] changepriority <ID> <PRIORITY:0,1,2,3,4)>");
-//         return;
-//     }
-
-//     BYTE bPriority = kAToI(vcPriority, 10);
-
-//     kPrintf("Change priority of task [0x%q] had changed to [%d]: ", qwID, bPriority);
-
-//     if (kChangePriority(qwID, bPriority) == TRUE) {
-//         kPrintlnColor("Success", VGA_ATTR_FOREGROUND_BRIGHTGREEN);
-//     } else {
-//         kPrintlnColor("Fail", VGA_ATTR_FOREGROUND_BRIGHTRED);
-//     }
-// }
+    if (kChangePriority(qwID, bPriority) == TRUE) {
+        kPrintlnColor("Success", VGA_ATTR_FOREGROUND_BRIGHTGREEN);
+    } else {
+        kPrintlnColor("Fail", VGA_ATTR_FOREGROUND_BRIGHTRED);
+    }
+}
 
 static void kShowTaskList(PARAMETER_LIST* pstList) {
     int iCount = 0;
@@ -396,254 +293,259 @@ static void kShowHDDInformation(PARAMETER_LIST* pstList) {
     kPrintf("Total Size:\t\t %dMB\n", stHDD.dwTotalSectors / 2 / 1024);
 }
 
-static void kReadHDD(PARAMETER_LIST* pstList) {
-    char vcLBA[50];
-    if ((kGetNextParameter(pstList, vcLBA) == 0)) {
-        kPrintln("[Usage] readhdd <LBA>");
-        return;
-    }
-
-    DWORD dwLBA = kAToI(vcLBA, 10);
-    char* pcBuffer = kAllocateMemory(512);
-
-    if (kReadATASector(TRUE, TRUE, dwLBA, 1, pcBuffer) == 0) {
-        kPrintln("Read Fail");
-        kFreeMemory(pcBuffer);
+static void kFormatHDD(PARAMETER_LIST* pstList) {
+    if (kFormat() == FALSE) {
+        kPrintErr("HDD format failed.\n");
 
         return;
     }
 
-    kPrintln(pcBuffer);
-
-    kFreeMemory(pcBuffer);
+    kPrintln("HDD formatted.");
 }
 
-static void kWriteHDD(PARAMETER_LIST* pstList) {
-    char vcLBA[50];
-    char data[512] = {
-        0,
-    };
-    if ((kGetNextParameter(pstList, vcLBA) == 0)) {
-        kPrintln("[Usage] writehdd <LBA> <TEXT>");
+static void kShowRootDirectory(PARAMETER_LIST* pstList) {
+    DIR* pstDirectory = opendir("/");
+    if (pstDirectory == NULL) {
+        kPrintErr("Could not open root directory.\n");
         return;
     }
 
-    char* dataPt = data;
-
+    int iTotalCount = 0;
+    DWORD dwTotalByte = 0;
+    DWORD dwUsedClusterCount = 0;
     while (1) {
-        int size = kGetNextParameter(pstList, dataPt);
-        if (size == 0) {
+        struct dirent* pstEntry = readdir(pstDirectory);
+        if (pstEntry == NULL) {
+            // 더이상 파일이 없으면 나감
             break;
         }
 
-        dataPt += size;
-        *dataPt = ' ';
-        dataPt++;
-    }
-
-    *(--dataPt) = '\0';
-
-    DWORD dwLBA = kAToI(vcLBA, 10);
-
-    if (kWriteATASector(TRUE, TRUE, dwLBA, 1, data) == 0) {
-        kPrintln("Write Fail");
-
-        return;
-    }
-}
-/**
- *  하드 디스크를 연결
- */
-static void kMountHDD(PARAMETER_LIST* pstList) {
-    if (kMount() == FALSE) {
-        kPrintf("HDD Mount Fail\n");
-        return;
-    }
-    kPrintf("HDD Mount Success\n");
-}
-
-/**
- *  하드 디스크에 파일 시스템을 생성(포맷)
- */
-static void kFormatHDD(PARAMETER_LIST* pstList) {
-    if (kFormat() == FALSE) {
-        kPrintf("HDD Format Fail\n");
-        return;
-    }
-    kPrintf("HDD Format Success\n");
-}
-
-/**
- *  파일 시스템 정보를 표시
- */
-static void kShowFileSystemInformation(PARAMETER_LIST* pstList) {
-    FILESYSTEMMANAGER stManager;
-
-    kGetFileSystemInformation(&stManager);
-
-    kPrintf("================== File System Information ==================\n");
-    kPrintf("Mouted:\t\t\t\t\t %d\n", stManager.bMounted);
-    kPrintf("Reserved Sector Count:\t\t\t %d Sector\n", stManager.dwReservedSectorCount);
-    kPrintf("Cluster Link Table Start Address:\t %d Sector\n", stManager.dwClusterLinkAreaStartAddress);
-    kPrintf("Cluster Link Table Size:\t\t %d Sector\n", stManager.dwClusterLinkAreaSize);
-    kPrintf("Data Area Start Address:\t\t %d Sector\n", stManager.dwDataAreaStartAddress);
-    kPrintf("Total Cluster Count:\t\t\t %d Cluster\n", stManager.dwTotalClusterCount);
-}
-
-/**
- *  루트 디렉터리에 빈 파일을 생성
- */
-static void kCreateFileInRootDirectory(PARAMETER_LIST* pstList) {
-    char vcFileName[50];
-    int iLength;
-    DWORD dwCluster;
-    DIRECTORYENTRY stEntry;
-    int i;
-
-    // 파라미터 리스트를 초기화하여 파일 이름을 추출
-    iLength = kGetNextParameter(pstList, vcFileName);
-    vcFileName[iLength] = '\0';
-    if ((iLength > (sizeof(stEntry.vcFileName) - 1)) || (iLength == 0)) {
-        kPrintf("Too Long or Too Short File Name\n");
-        return;
-    }
-
-    // 빈 클러스터를 찾아서 할당된 것으로 설정
-    dwCluster = kFindFreeCluster();
-    if ((dwCluster == FILESYSTEM_LASTCLUSTER) || (kSetClusterLinkData(dwCluster, FILESYSTEM_LASTCLUSTER) == FALSE)) {
-        kPrintf("Cluster Allocation Fail\n");
-        return;
-    }
-
-    // 빈 디렉터리 엔트리를 검색
-    i = kFindFreeDirectoryEntry();
-    if (i == -1) {
-        // 실패할 경우 할당 받은 클러스터를 반환해야 함
-        kSetClusterLinkData(dwCluster, FILESYSTEM_FREECLUSTER);
-        kPrintf("Directory Entry is Full\n");
-        return;
-    }
-
-    // 디렉터리 엔트리를 설정
-    kMemCpy(stEntry.vcFileName, vcFileName, iLength + 1);
-    stEntry.dwStartClusterIndex = dwCluster;
-    stEntry.dwFileSize = 0;
-
-    // 디렉터리 엔트리를 등록
-    if (kSetDirectoryEntryData(i, &stEntry) == FALSE) {
-        // 실패할 경우 할당 받은 클러스터를 반환해야 함
-        kSetClusterLinkData(dwCluster, FILESYSTEM_FREECLUSTER);
-        kPrintf("Directory Entry Set Fail\n");
-    }
-    kPrintf("File Create Success\n");
-}
-
-/**
- *  루트 디렉터리에서 파일을 삭제
- */
-static void kDeleteFileInRootDirectory(PARAMETER_LIST* pstList) {
-    char vcFileName[50];
-    int iLength;
-    DIRECTORYENTRY stEntry;
-    int iOffset;
-
-    // 파라미터 리스트를 초기화하여 파일 이름을 추출
-    iLength = kGetNextParameter(pstList, vcFileName);
-    vcFileName[iLength] = '\0';
-    if ((iLength > (sizeof(stEntry.vcFileName) - 1)) || (iLength == 0)) {
-        kPrintf("Too Long or Too Short File Name\n");
-        return;
-    }
-
-    // 파일 이름으로 디렉터리 엔트리를 검색
-    iOffset = kFindDirectoryEntry(vcFileName, &stEntry);
-    if (iOffset == -1) {
-        kPrintf("File Not Found\n");
-        return;
-    }
-
-    // 클러스터를 반환
-    if (kSetClusterLinkData(stEntry.dwStartClusterIndex, FILESYSTEM_FREECLUSTER) == FALSE) {
-        kPrintf("Cluster Free Fail\n");
-        return;
-    }
-
-    // 디렉터리 엔트리를 모두 초기화하여 빈 것으로 설정한 뒤, 해당 오프셋에 덮어씀
-    kMemSet(&stEntry, 0, sizeof(stEntry));
-    if (kSetDirectoryEntryData(iOffset, &stEntry) == FALSE) {
-        kPrintf("Root Directory Update Fail\n");
-        return;
-    }
-
-    kPrintf("File Delete Success\n");
-}
-
-/**
- *  루트 디렉터리의 파일 목록을 표시
- */
-static void kShowRootDirectory(PARAMETER_LIST* pstList) {
-    BYTE* pbClusterBuffer;
-    int i, iCount, iTotalCount;
-    DIRECTORYENTRY* pstEntry;
-    char vcBuffer[400];
-    char vcTempValue[50];
-    DWORD dwTotalByte;
-
-    pbClusterBuffer = kAllocateMemory(FILESYSTEM_SECTORSPERCLUSTER * 512);
-
-    // 루트 디렉터리를 읽음
-    if (kReadCluster(0, pbClusterBuffer) == FALSE) {
-        kPrintf("Root Directory Read Fail\n");
-        return;
-    }
-
-    // 먼저 루프를 돌면서 디렉터리에 있는 파일의 개수와 전체 파일이 사용한 크기를 계산
-    pstEntry = (DIRECTORYENTRY*)pbClusterBuffer;
-    iTotalCount = 0;
-    dwTotalByte = 0;
-    for (i = 0; i < FILESYSTEM_MAXDIRECTORYENTRYCOUNT; i++) {
-        if (pstEntry[i].dwStartClusterIndex == 0) {
-            continue;
-        }
         iTotalCount++;
-        dwTotalByte += pstEntry[i].dwFileSize;
+        dwTotalByte += pstEntry->dwFileSize;
+
+        // 실제로 사용된 클러스터의 개수를 계산
+        if (pstEntry->dwFileSize == 0) {
+            // 크기가 0이라도 클러스터 1개는 할당되어 있음
+            dwUsedClusterCount++;
+        } else {
+            // 클러스터 개수를 올림하여 더함
+            dwUsedClusterCount += (pstEntry->dwFileSize + (FILESYSTEM_CLUSTERSIZE - 1)) / FILESYSTEM_CLUSTERSIZE;
+        }
     }
 
     // 실제 파일의 내용을 표시하는 루프
-    pstEntry = (DIRECTORYENTRY*)pbClusterBuffer;
-    iCount = 0;
-    for (i = 0; i < FILESYSTEM_MAXDIRECTORYENTRYCOUNT; i++) {
-        if (pstEntry[i].dwStartClusterIndex == 0) {
-            continue;
+    rewinddir(pstDirectory);
+    int iCount = 0;
+    while (1) {
+        // 디렉터리에서 엔트리 하나를 읽음
+        struct dirent* pstEntry = readdir(pstDirectory);
+        // 더이상 파일이 없으면 나감
+        if (pstEntry == NULL) {
+            break;
         }
+
         // 전부 공백으로 초기화 한 후 각 위치에 값을 대입
+        char vcBuffer[400];
         kMemSet(vcBuffer, ' ', sizeof(vcBuffer) - 1);
-        vcBuffer[sizeof(vcBuffer) - 1] = '\0';
 
         // 파일 이름 삽입
-        kMemCpy(vcBuffer, pstEntry[i].vcFileName, kStrLen(pstEntry[i].vcFileName));
+        kMemCpy(vcBuffer, pstEntry->d_name, kStrLen(pstEntry->d_name));
+
         // 파일 길이 삽입
-        kSPrintf(vcTempValue, "%d Byte", pstEntry[i].dwFileSize);
+        char vcTempValue[50];
+        kSPrintf(vcTempValue, "%d Byte", pstEntry->dwFileSize);
         kMemCpy(vcBuffer + 30, vcTempValue, kStrLen(vcTempValue));
+
         // 파일의 시작 클러스터 삽입
-        kSPrintf(vcTempValue, "0x%X Cluster", pstEntry[i].dwStartClusterIndex);
+        kSPrintf(vcTempValue, "0x%X Cluster", pstEntry->dwStartClusterIndex);
         kMemCpy(vcBuffer + 55, vcTempValue, kStrLen(vcTempValue) + 1);
         kPrintf("    %s\n", vcBuffer);
 
         if ((iCount != 0) && ((iCount % 20) == 0)) {
-            kPrintf("Press any key to continue... ('q' is exit) : ");
+            kPrintf("Press any key to continue... ('q' to quit) : ");
             if (kGetCh() == 'q') {
                 kPrintf("\n");
                 break;
             }
         }
+
         iCount++;
     }
 
     // 총 파일의 개수와 파일의 총 크기를 출력
-    kPrintf("\t Total File Count: %d\t Total File Size: %d Byte\n", iTotalCount, dwTotalByte);
+    kPrintf("\n");
+    kPrintf("Total File Count: %d\n", iTotalCount);
+    kPrintf("Total File Size: %d KByte (%d Cluster)\n", dwTotalByte, dwUsedClusterCount);
 
-    kFreeMemory(pbClusterBuffer);
+    // // 남은 클러스터 수를 이용해서 여유 공간을 출력
+    FILESYSTEMMANAGER stManager;
+    kGetFileSystemInformation(&stManager);
+    kPrintf("Left Space: %d KByte (%d Cluster)\n",
+            (stManager.dwTotalClusterCount - dwUsedClusterCount) * FILESYSTEM_CLUSTERSIZE / 1024,
+            stManager.dwTotalClusterCount - dwUsedClusterCount);
+
+    closedir(pstDirectory);
+}
+
+static void kCreateFileInRootDirectory(PARAMETER_LIST* pstList) {
+    char vcFileName[50];
+    int iLength = kGetNextParameter(pstList, vcFileName);
+
+    if (iLength == 0) {
+        kPrintln("[Usage] touch <file name>");
+        return;
+    }
+
+    if (iLength > (FILESYSTEM_MAXFILENAMELENGTH - 1)) {
+        kPrintErr("Invalid file name.\n");
+        return;
+    }
+
+    FILE* pstFile = fopen(vcFileName, "w");
+    if (pstFile == NULL) {
+        kPrintErr("File create failed.\n");
+
+        return;
+    }
+
+    fclose(pstFile);
+    kPrintln("File created.");
+}
+
+static void kDeleteFileInRootDirectory(PARAMETER_LIST* pstList) {
+    char vcFileName[50];
+    int iLength = kGetNextParameter(pstList, vcFileName);
+
+    if (iLength == 0) {
+        kPrintln("[Usage] rm <file name>");
+        return;
+    }
+
+    if (iLength > (FILESYSTEM_MAXFILENAMELENGTH - 1)) {
+        kPrintErr("Invalid file name.\n");
+        return;
+    }
+
+    if (remove(vcFileName) != 0) {
+        kPrintErr("Could not delete file.\n");
+        return;
+    }
+
+    kPrintln("File deleted.");
+}
+
+static void kWriteDataToFile(PARAMETER_LIST* pstList) {
+    char vcFileName[50];
+    int iLength = kGetNextParameter(pstList, vcFileName);
+
+    if (iLength == 0) {
+        kPrintln("[Usage] write <file name>");
+        return;
+    }
+
+    if (iLength > (FILESYSTEM_MAXFILENAMELENGTH - 1)) {
+        kPrintErr("Invalid file name.\n");
+        return;
+    }
+
+    FILE* fp = fopen(vcFileName, "w");
+    if (fp == NULL) {
+        kPrintErr("Could not open file.\n");
+        return;
+    }
+
+    kPrintColor("Enter data to write to file. (Press ESC key twice to end)\n", VGA_ATTR_FOREGROUND_BRIGHTBLACK);
+
+    // esc 키가 연속으로 2번 눌러질 때까지 내용을 파일에 씀
+    int iEnterCount = 0;
+    int size = 0;
+    while (1) {
+        BYTE bKey = kGetCh();
+        if (bKey == KEY_ESC) {
+            iEnterCount++;
+            if (iEnterCount >= 2) {
+                break;
+            }
+
+            continue;
+        }
+
+        iEnterCount = 0;
+
+        if (bKey == KEY_BACKSPACE) {
+            if (size == 0) {
+                continue;
+            }
+
+            size--;
+            fseek(fp, -1, SEEK_CUR);
+            kClearChar();
+
+            continue;
+        }
+
+        kPrintf("%c", bKey);
+        if (fwrite(&bKey, 1, 1, fp) != 1) {
+            kPrintErr("Could not write file.\n");
+            break;
+        }
+
+        size++;
+    }
+
+    kPrintf("\nFile Create Success\n");
+    fclose(fp);
+}
+
+static void kReadDataFromFile(PARAMETER_LIST* pstList) {
+    char vcFileName[50];
+    int iLength = kGetNextParameter(pstList, vcFileName);
+
+    if (iLength == 0) {
+        kPrintln("[Usage] cat <file name>");
+        return;
+    }
+
+    if (iLength > (FILESYSTEM_MAXFILENAMELENGTH - 1)) {
+        kPrintErr("Invalid file name.\n");
+        return;
+    }
+
+    // 파일 생성
+    FILE* fp = fopen(vcFileName, "r");
+    if (fp == NULL) {
+        kPrintErr("Could not open file.\n");
+        return;
+    }
+
+    // 파일의 끝까지 출력하는 것을 반복
+    int iEnterCount = 0;
+    while (1) {
+        BYTE bKey;
+        if (fread(&bKey, 1, 1, fp) != 1) {
+            break;
+        }
+
+        kPrintf("%c", bKey);
+
+        if (bKey == KEY_ENTER) {
+            iEnterCount++;
+
+            if ((iEnterCount != 0) && ((iEnterCount % 20) == 0)) {
+                kPrintf("Press any key to continue... ('q' to quit) : ");
+                if (kGetCh() == 'q') {
+                    kPrintf("\n");
+                    break;
+                }
+
+                kPrintf("\n");
+                iEnterCount = 0;
+            }
+        }
+    }
+
+    fclose(fp);
+    kPrintf("\n");
 }
 
 SHELL_COMMAND_ENTRY gs_vstCommandTable[] = {
@@ -655,20 +557,17 @@ SHELL_COMMAND_ENTRY gs_vstCommandTable[] = {
     {"cpuload", "Show processor load", kCPULoad},
     {"wait", "Wait ms using PIT.", kWaitUsingPIT},
     {"datetime", "Show date and time", kShowDateAndTime},
-    // {"createtask", "Create task", kCreateTestTask},
-    // {"changepriority", "Change task priority", kChangeTaskPriority},
+    {"changepriority", "Change task priority", kChangeTaskPriority},
     {"tasklist", "Show task list", kShowTaskList},
     {"kill", "Kill task", kKillTask},
     {"matrix", "Show MATRIX", kShowMatrix},
     {"hddinfo", "Show HDD info", kShowHDDInformation},
-    {"readhdd", "Read from HDD", kReadHDD},
-    {"writehdd", "Write to HDD", kWriteHDD},
-    {"mounthdd", "Mount HDD", kMountHDD},
     {"formathdd", "Format HDD", kFormatHDD},
-    {"filesysteminfo", "Show File System Information", kShowFileSystemInformation},
-    {"createfile", "Create File, ex)createfile a.txt", kCreateFileInRootDirectory},
-    {"deletefile", "Delete File, ex)deletefile a.txt", kDeleteFileInRootDirectory},
-    {"dir", "Show Directory", kShowRootDirectory},
+    {"ls", "Show files", kShowRootDirectory},
+    {"touch", "Create file", kCreateFileInRootDirectory},
+    {"write", "Write data to file", kWriteDataToFile},
+    {"cat", "Read data from file", kReadDataFromFile},
+    {"rm", "Delete file", kDeleteFileInRootDirectory},
 };
 
 static void kHelp(PARAMETER_LIST* pstList) {

@@ -18,6 +18,9 @@
 // 클러스터의 크기(바이트 수)
 #define FILESYSTEM_CLUSTERSIZE (FILESYSTEM_SECTORSPERCLUSTER * 512)
 
+// 핸들의 최대 개수
+#define FILESYSTEM_HANDLE_MAXCOUNT (1024 * 3)
+
 // 파일 이름의 최대 길이
 #define FILESYSTEM_MAXFILENAMELENGTH 24
 
@@ -25,6 +28,38 @@
 typedef BOOL (*fReadHDDInformation)(BOOL bPrimary, BOOL bMaster, HDDINFORMATION* pstHDDInformation);
 typedef int (*fReadHDDSector)(BOOL bPrimary, BOOL bMaster, DWORD dwLBA, int iSectorCount, char* pcBuffer);
 typedef int (*fWriteHDDSector)(BOOL bPrimary, BOOL bMaster, DWORD dwLBA, int iSectorCount, char* pcBuffer);
+
+// 핸들의 타입을 정의
+#define FILESYSTEM_TYPE_FREE 0
+#define FILESYSTEM_TYPE_FILE 1
+#define FILESYSTEM_TYPE_DIRECTORY 2
+
+// SEEK 옵션 정의
+#define FILESYSTEM_SEEK_SET 0
+#define FILESYSTEM_SEEK_CUR 1
+#define FILESYSTEM_SEEK_END 2
+
+// MINT 파일 시스템 함수를 표준 입출력 함수 이름으로 재정의
+#define fopen kOpenFile
+#define fread kReadFile
+#define fwrite kWriteFile
+#define fseek kSeekFile
+#define fclose kCloseFile
+#define remove kRemoveFile
+#define opendir kOpenDirectory
+#define readdir kReadDirectory
+#define rewinddir kRewindDirectory
+#define closedir kCloseDirectory
+
+// MINT 파일 시스템 매크로를 표준 입출력의 매크로를 재정의
+#define SEEK_SET FILESYSTEM_SEEK_SET
+#define SEEK_CUR FILESYSTEM_SEEK_CUR
+#define SEEK_END FILESYSTEM_SEEK_END
+
+// MINT 파일 시스템 타입과 필드를 표준 입출력의 타입으로 재정의
+#define size_t DWORD
+#define dirent kDirectoryEntryStruct
+#define d_name vcFileName
 
 #pragma pack(push, 1)
 
@@ -76,6 +111,45 @@ typedef struct kDirectoryEntryStruct {
 
 #pragma pack(pop)
 
+// 파일을 관리하는 파일 핸들 자료구조
+typedef struct kFileHandleStruct {
+    // 파일이 존재하는 디렉터리 엔트리의 오프셋
+    int iDirectoryEntryOffset;
+    // 파일 크기
+    DWORD dwFileSize;
+    // 파일의 시작 클러스터 인덱스
+    DWORD dwStartClusterIndex;
+    // 현재 I/O가 수행중인 클러스터의 인덱스
+    DWORD dwCurrentClusterIndex;
+    // 현재 클러스터의 바로 이전 클러스터의 인덱스
+    DWORD dwPreviousClusterIndex;
+    // 파일 포인터의 현재 위치
+    DWORD dwCurrentOffset;
+} FILEHANDLE;
+
+// 디렉터리를 관리하는 디렉터리 핸들 자료구조
+typedef struct kDirectoryHandleStruct {
+    // 루트 디렉터리를 저장해둔 버퍼
+    DIRECTORYENTRY* pstDirectoryBuffer;
+
+    // 디렉터리 포인터의 현재 위치
+    int iCurrentOffset;
+} DIRECTORYHANDLE;
+
+// 파일과 디렉터리에 대한 정보가 들어있는 자료구조
+typedef struct kFileDirectoryHandleStruct {
+    // 자료구조의 타입 설정. 파일 핸들이나 디렉터리 핸들, 또는 빈 핸들 타입 지정 가능
+    BYTE bType;
+
+    // bType의 값에 따라 파일 또는 디렉터리로 사용
+    union {
+        // 파일 핸들
+        FILEHANDLE stFileHandle;
+        // 디렉터리 핸들
+        DIRECTORYHANDLE stDirectoryHandle;
+    };
+} FILE, DIR;
+
 // 파일 시스템을 관리하는 구조체
 typedef struct kFileSystemManagerStruct {
     // 파일 시스템이 정상적으로 인식되었는지 여부
@@ -94,24 +168,28 @@ typedef struct kFileSystemManagerStruct {
 
     // 파일 시스템 동기화 객체
     MUTEX stMutex;
+
+    // 핸들 풀(Handle Pool)의 어드레스
+    FILE* pstHandlePool;
 } FILESYSTEMMANAGER;
 
 BOOL kInitFileSystem(void);
 BOOL kFormat(void);
 BOOL kMount(void);
 BOOL kGetHDDInformation(HDDINFORMATION* pstInformation);
-
-BOOL kReadClusterLinkTable(DWORD dwOffset, BYTE* pbBuffer);
-BOOL kWriteClusterLinkTable(DWORD dwOffset, BYTE* pbBuffer);
-BOOL kReadCluster(DWORD dwOffset, BYTE* pbBuffer);
-BOOL kWriteCluster(DWORD dwOffset, BYTE* pbBuffer);
-DWORD kFindFreeCluster(void);
-BOOL kSetClusterLinkData(DWORD dwClusterIndex, DWORD dwData);
-BOOL kGetClusterLinkData(DWORD dwClusterIndex, DWORD* pdwData);
-int kFindFreeDirectoryEntry(void);
-BOOL kSetDirectoryEntryData(int iIndex, DIRECTORYENTRY* pstEntry);
-BOOL kGetDirectoryEntryData(int iIndex, DIRECTORYENTRY* pstEntry);
-int kFindDirectoryEntry(const char* pcFileName, DIRECTORYENTRY* pstEntry);
 void kGetFileSystemInformation(FILESYSTEMMANAGER* pstManager);
+
+FILE* kOpenFile(const char* pcFileName, const char* pcMode);
+DWORD kReadFile(void* pvBuffer, DWORD dwSize, DWORD dwCount, FILE* pstFile);
+DWORD kWriteFile(const void* pvBuffer, DWORD dwSize, DWORD dwCount, FILE* pstFile);
+int kSeekFile(FILE* pstFile, int iOffset, int iOrigin);
+int kCloseFile(FILE* pstFile);
+int kRemoveFile(const char* pcFileName);
+DIR* kOpenDirectory(const char* pcDirectoryName);
+struct kDirectoryEntryStruct* kReadDirectory(DIR* pstDirectory);
+void kRewindDirectory(DIR* pstDirectory);
+int kCloseDirectory(DIR* pstDirectory);
+BOOL kWriteZero(FILE* pstFile, DWORD dwCount);
+BOOL kIsFileOpened(const DIRECTORYENTRY* pstEntry);
 
 #endif /*__MINTFS_H__*/
